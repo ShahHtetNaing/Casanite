@@ -170,14 +170,14 @@ export function HealthPanel({
       <div className="grid gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="neon-panel p-4">
-            <p className="flex items-center gap-1.5 font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
+            <p className="flex items-center gap-1.5 tabular-nums text-[10px] text-muted-foreground">
               <Scale className="size-3" /> Weight / BMI
             </p>
             {latestWeight ? (
               <>
-                <p className="font-display text-2xl font-bold text-cyan-200">
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-300">
                   {Number(latestWeight.weight_kg)} kg
-                  {latestWeight.bmi != null && <span className="ml-3 text-lg text-fuchsia-200">BMI {Number(latestWeight.bmi)}</span>}
+                  {latestWeight.bmi != null && <span className="ml-3 text-lg text-violet-600 dark:text-violet-300">BMI {Number(latestWeight.bmi)}</span>}
                 </p>
                 {latestWeight.bmi != null && <p className="text-xs text-muted-foreground">{bmiLabel(Number(latestWeight.bmi))}</p>}
               </>
@@ -186,14 +186,14 @@ export function HealthPanel({
             )}
           </div>
           <div className="neon-panel p-4">
-            <p className="flex items-center gap-1.5 font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
+            <p className="flex items-center gap-1.5 tabular-nums text-[10px] text-muted-foreground">
               <HeartPulse className="size-3" /> Blood pressure
             </p>
             {latestBp ? (
               <>
-                <p className="font-display text-2xl font-bold text-rose-200">
+                <p className="text-2xl font-bold text-rose-600 dark:text-rose-300">
                   {latestBp.systolic}/{latestBp.diastolic}
-                  {latestBp.heart_rate != null && <span className="ml-3 text-lg text-amber-200">{latestBp.heart_rate} bpm</span>}
+                  {latestBp.heart_rate != null && <span className="ml-3 text-lg text-amber-600 dark:text-amber-300">{latestBp.heart_rate} bpm</span>}
                 </p>
                 <p className="text-xs text-muted-foreground">{bpLabel(latestBp.systolic!, latestBp.diastolic!)}</p>
               </>
@@ -204,11 +204,11 @@ export function HealthPanel({
         </div>
 
         <div className="neon-panel p-4">
-          <h3 className="mb-2 font-display text-sm font-bold tracking-wider text-cyan-300 uppercase">Weight & BMI</h3>
+          <h3 className="mb-2 text-sm font-bold text-blue-600 dark:text-blue-300">Weight & BMI</h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid stroke="oklch(1 0 0 / 6%)" />
+                <CartesianGrid stroke="var(--border)" />
                 <XAxis dataKey="date" tick={axisTick} />
                 <YAxis yAxisId="w" tick={axisTick} domain={["auto", "auto"]} />
                 <YAxis yAxisId="b" orientation="right" tick={axisTick} domain={["auto", "auto"]} />
@@ -222,11 +222,11 @@ export function HealthPanel({
         </div>
 
         <div className="neon-panel p-4">
-          <h3 className="mb-2 font-display text-sm font-bold tracking-wider text-rose-300 uppercase">Blood pressure & heart rate</h3>
+          <h3 className="mb-2 text-sm font-bold text-rose-600 dark:text-rose-300">Blood pressure & heart rate</h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid stroke="oklch(1 0 0 / 6%)" />
+                <CartesianGrid stroke="var(--border)" />
                 <XAxis dataKey="date" tick={axisTick} />
                 <YAxis tick={axisTick} domain={["auto", "auto"]} />
                 <Tooltip contentStyle={tooltipStyle} />
@@ -242,7 +242,7 @@ export function HealthPanel({
 
       <div className="grid content-start gap-4">
         <div className="neon-panel p-4">
-          <h3 className="mb-3 font-display text-sm font-bold tracking-wider text-lime-300 uppercase">
+          <h3 className="mb-3 text-sm font-bold text-emerald-600 dark:text-emerald-300">
             {editing ? "Edit entry" : "Log vitals"}
           </h3>
           <HealthForm
@@ -261,11 +261,11 @@ export function HealthPanel({
           />
         </div>
         <div className="neon-panel max-h-96 overflow-y-auto p-4">
-          <h3 className="mb-2 font-display text-sm font-bold tracking-wider text-muted-foreground uppercase">History</h3>
+          <h3 className="mb-2 text-sm font-bold text-muted-foreground">History</h3>
           {logs.length === 0 && <p className="text-xs text-muted-foreground">No entries.</p>}
           <ul className="space-y-1">
             {[...logs].reverse().map((l) => (
-              <li key={l.id} className="flex items-center gap-2 rounded px-1.5 py-1 font-mono text-xs hover:bg-white/[0.03]">
+              <li key={l.id} className="flex items-center gap-2 rounded px-1.5 py-1 tabular-nums text-xs hover:bg-white/[0.03]">
                 <span className="w-14 text-muted-foreground">{shortDate(l.logged_at)}</span>
                 <span className="flex-1">
                   {l.weight_kg != null && `${Number(l.weight_kg)}kg `}
@@ -279,7 +279,7 @@ export function HealthPanel({
                   variant="ghost"
                   size="icon-xs"
                   aria-label="Delete entry"
-                  className="text-rose-400"
+                  className="text-rose-500"
                   onClick={() => onDelete(l)}
                 >
                   <Trash2 />

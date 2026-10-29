@@ -49,7 +49,7 @@ function Field({
     <div className="grid gap-1.5">
       <Label htmlFor={control ? id : undefined}>{label}</Label>
       {control ? cloneElement(control, { id }) : children}
-      {error && <p className="text-[11px] text-rose-400">{error}</p>}
+      {error && <p className="text-[11px] text-rose-500">{error}</p>}
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -66,9 +66,9 @@ function DaysPicker({ value, onChange }: { value: number[]; onChange: (days: num
             type="button"
             onClick={() => onChange(on ? value.filter((x) => x !== d) : [...value, d].sort())}
             className={cn(
-              "rounded-md border px-2 py-1 font-mono text-xs transition-colors",
+              "rounded-md border px-2 py-1 tabular-nums text-xs transition-colors",
               on
-                ? "border-cyan-400/70 bg-cyan-400/15 text-cyan-200"
+                ? "border-blue-400/70 bg-blue-400/15 text-blue-600 dark:text-blue-300"
                 : "border-border text-muted-foreground hover:text-foreground",
             )}
           >
@@ -142,7 +142,7 @@ function GroupForm({ group, onSave }: { group: RoutineGroup | null; onSave: (v: 
   return (
     <form onSubmit={submit} className="grid gap-4">
       <DialogHeader>
-        <DialogTitle className="font-display tracking-wider">{group ? "Edit group" : "New group"}</DialogTitle>
+        <DialogTitle className="tracking-wider">{group ? "Edit group" : "New group"}</DialogTitle>
         <DialogDescription>A routine block, e.g. a gym day, habit list or goal set.</DialogDescription>
       </DialogHeader>
       <Field label="Title">
@@ -313,7 +313,7 @@ function ItemForm({
   return (
     <form onSubmit={submit} className="grid gap-4">
       <DialogHeader>
-        <DialogTitle className="font-display tracking-wider">{item ? "Edit item" : "New item"}</DialogTitle>
+        <DialogTitle className="tracking-wider">{item ? "Edit item" : "New item"}</DialogTitle>
         <DialogDescription>Exercise, habit, reminder or goal.</DialogDescription>
       </DialogHeader>
       <Field label="Group">

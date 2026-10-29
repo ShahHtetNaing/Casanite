@@ -30,10 +30,10 @@ export function GuitarBanner({ guitarClasses }: { guitarClasses: CalendarEventLi
   if (!alert.active) return null;
 
   return (
-    <div className="neon-panel flex flex-wrap items-center gap-3 border-fuchsia-400/60 p-4 shadow-[0_0_30px_-6px] shadow-fuchsia-500/60">
-      <Guitar className="size-6 animate-pulse text-fuchsia-300" />
+    <div className="neon-panel flex flex-wrap items-center gap-3 border-violet-400/60 p-4">
+      <Guitar className="size-6 animate-pulse text-violet-600 dark:text-violet-300" />
       <div className="flex-1">
-        <p className="font-display text-sm font-bold tracking-wider text-fuchsia-200 uppercase">Saturday alert</p>
+        <p className="text-sm font-bold text-violet-600 dark:text-violet-300">Saturday alert</p>
         <p className="text-sm">{message}</p>
       </div>
       {permission === "default" && (

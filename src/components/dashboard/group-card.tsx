@@ -42,7 +42,7 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className={danger ? "text-rose-400 hover:bg-rose-500/15 hover:text-rose-300" : undefined}
+      className={danger ? "text-rose-500 hover:bg-rose-500/15 hover:text-rose-300" : undefined}
     >
       {children}
     </Button>
@@ -97,7 +97,7 @@ export function ItemRow({
           >
             <Minus />
           </Button>
-          <span className={cn("w-9 text-center font-mono text-xs", done && "text-lime-300")}>
+          <span className={cn("w-9 text-center tabular-nums text-xs", done && "text-emerald-600 dark:text-emerald-300")}>
             {count}/{item.target_count}
           </span>
           <Button
@@ -116,12 +116,12 @@ export function ItemRow({
         <p className={cn("text-sm", done && "text-muted-foreground line-through decoration-cyan-400/60")}>
           {item.title}
           {item.details && (
-            <span className="ml-2 font-mono text-xs text-cyan-300/80">{item.details}</span>
+            <span className="ml-2 tabular-nums text-xs text-blue-300/80">{item.details}</span>
           )}
         </p>
         {item.notes && <p className="text-xs text-muted-foreground">{item.notes}</p>}
         {showSchedule && (item.frequency || item.days_of_week || item.target_date) && (
-          <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+          <p className="tabular-nums text-[10px] text-muted-foreground">
             {freq} · {formatDays(days)}
             {item.target_date && ` · due ${item.target_date}`}
           </p>
@@ -176,11 +176,11 @@ export function GroupCard({
   const done = trackable.filter((i) => (counts.get(i.id) ?? 0) >= i.target_count).length;
 
   return (
-    <section className={cn("neon-panel scanlines p-4", !group.is_active && "opacity-50")}>
+    <section className={cn("neon-panel p-4", !group.is_active && "opacity-50")}>
       <header className="mb-2 flex items-start gap-2">
-        <span className={cn("mt-1.5 size-2 shrink-0 rounded-full shadow-[0_0_8px_currentColor]", c.dot)} />
+        <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", c.dot)} />
         <div className="min-w-0 flex-1">
-          <h3 className={cn("font-display text-sm font-bold tracking-wider uppercase", c.text)}>
+          <h3 className={cn("text-sm font-semibold", c.text)}>
             {group.title}
           </h3>
           <p className="text-xs text-muted-foreground">
@@ -189,7 +189,7 @@ export function GroupCard({
           </p>
         </div>
         {trackable.length > 0 && (
-          <Badge variant="outline" className={cn("font-mono", c.border, c.text)}>
+          <Badge variant="outline" className={cn("tabular-nums", c.border, c.text)}>
             {done}/{trackable.length}
           </Badge>
         )}

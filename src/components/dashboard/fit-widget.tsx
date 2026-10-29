@@ -11,13 +11,13 @@ const STEP_GOAL = 8000;
 
 function Metric({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-lg border border-border bg-black/20 p-2.5">
-      <p className="flex items-center gap-1 font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
+    <div className="rounded-lg border border-border bg-muted/50 p-2.5">
+      <p className="flex items-center gap-1 tabular-nums text-[10px] text-muted-foreground">
         {icon}
         {label}
       </p>
-      <p className="font-display text-lg font-bold">{value}</p>
-      {sub && <p className="font-mono text-[10px] text-muted-foreground">{sub}</p>}
+      <p className="text-lg font-bold">{value}</p>
+      {sub && <p className="tabular-nums text-[10px] text-muted-foreground">{sub}</p>}
     </div>
   );
 }
@@ -30,7 +30,7 @@ export function FitWidget() {
   return (
     <section className="neon-panel p-4">
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="font-display text-sm font-bold tracking-wider text-lime-300 uppercase">Google Fit Sync</h3>
+        <h3 className="text-sm font-bold text-emerald-600 dark:text-emerald-300">Google Fit Sync</h3>
         <Button size="xs" variant="outline" onClick={() => void refresh()} disabled={state.status === "loading"}>
           <RefreshCw className={state.status === "loading" ? "animate-spin" : undefined} />
           Sync
