@@ -807,11 +807,17 @@ returns trigger
 language plpgsql
 as $$
 declare
-  v_height numeric := nullif(new.metrics ->> 'height_cm', '')::numeric;
+  v_height numeric;
 begin
   if new.weight_kg is null then
     delete from public.health_logs where evolt_scan_id = new.id;
     return new;
+  end if;
+
+  -- Tolerate AI-written strings like "175 cm"; ignore anything outside the health_logs range.
+  v_height := substring(new.metrics ->> 'height_cm' from '^\s*(\d{2,3}(?:\.\d+)?)')::numeric;
+  if v_height is not null and (v_height < 80 or v_height > 260) then
+    v_height := null;
   end if;
 
   if v_height is null then

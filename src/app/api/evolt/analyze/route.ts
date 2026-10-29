@@ -52,13 +52,14 @@ export async function POST(req: Request) {
       const file = await supabase.storage.from("evolt-scans").download(s.pdf_path);
       if (file.error) throw new Error(`Could not read PDF: ${file.error.message}`);
       const pdf = await getDocumentProxy(new Uint8Array(await file.data.arrayBuffer()));
-      reportText = (await extractText(pdf, { mergePages: true })).text.replace(/\s+/g, " ").slice(0, 20000);
-      if (reportText.length < 200) {
-        throw new Error("Couldn't read text from this PDF (it may be a scanned image). Enter the values manually with the edit button instead.");
+      const text = (await extractText(pdf, { mergePages: true })).text.replace(/\s+/g, " ").slice(0, 20000);
+      if (text.length >= 200) reportText = text;
+      else if (s.weight_kg == null) {
+        throw new Error("Couldn't read text from this PDF (it may be a scanned image). Enter the values manually with the edit button, then analyze again.");
       }
     }
     const prompt =
-      `${reportText ? `Text extracted from my Evolt 360 body scan PDF:\n"""${reportText}"""\nExtract its values, then analyse it.` : "Analyse this Evolt 360 scan (no PDF; values below)."}\n` +
+      `${reportText ? `Text extracted from my Evolt 360 body scan PDF:\n"""${reportText}"""\nExtract its values, then analyse it.` : `Analyse this Evolt 360 scan (${s.pdf_path ? "PDF text unreadable" : "no PDF"}; use the stored values below).`}\n` +
       `Stored values: ${JSON.stringify({ ...s, analysis: undefined, pdf_path: undefined })}\n` +
       `Scan history: ${JSON.stringify(history ?? [])}\n` +
       `Current routine (do not repeat these): ${(items ?? []).map((i) => i.title).join("; ")}`;
