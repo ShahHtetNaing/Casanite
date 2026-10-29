@@ -140,7 +140,7 @@ export async function collectWeeklyStats(supabase: SupabaseClient, userId: strin
   const diet = items
     .filter((i) => groupById.get(i.group_id)?.kind === "diet")
     .map((i) => {
-      const logs = dietLogs.filter((l) => l.item_id === i.id);
+      const logs = dietLogs.filter((l) => l.item_id === i.id && existedOn(i, l.day));
       const followed = logs.filter((l) => l.followed).length;
       const missed = logs.length - followed;
       const eligible = days.filter((d) => existedOn(i, d)).length;

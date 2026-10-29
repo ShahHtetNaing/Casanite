@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { WEEKDAY_SHORT } from "@/lib/date";
+import { WEEKDAY_SHORT, zonedParts } from "@/lib/date";
 import type { DietLog, ReportWeek, RoutineItem, WeeklyReport } from "@/lib/types";
 import { ReportView, formatWeek } from "./report-view";
 
@@ -116,7 +116,10 @@ export function Journal({ initialReports, dietItems, initialDietLogs, weekDays, 
                 </tr>
               </thead>
               <tbody>
-                {dietItems.map((item) => (
+                {dietItems.map((item) => {
+                  const created = (item as RoutineItem & { created_at?: string }).created_at;
+                  const firstDay = created ? zonedParts(new Date(created)).isoDate : "";
+                  return (
                   <tr key={item.id} className="border-t">
                     <td className="py-2 pr-2">
                       <p className="font-medium">{item.title}</p>
@@ -124,13 +127,13 @@ export function Journal({ initialReports, dietItems, initialDietLogs, weekDays, 
                     </td>
                     {weekDays.map((day) => {
                       const log = logFor(item.id, day);
-                      const future = day > today;
+                      const locked = day > today || day < firstDay;
                       const label = `${item.title} on ${day}: ${!log ? "not logged" : log.followed ? "kept" : "missed"}`;
                       return (
                         <td key={day} className="py-2 text-center">
                           <button
                             type="button"
-                            disabled={future}
+                            disabled={locked}
                             onClick={() => cycle(item.id, day)}
                             aria-label={label}
                             title={label}
@@ -148,7 +151,8 @@ export function Journal({ initialReports, dietItems, initialDietLogs, weekDays, 
                       );
                     })}
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
