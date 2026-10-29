@@ -33,7 +33,10 @@ function must<T>(res: { data: T | null; error: { message: string } | null }, wha
 }
 
 export async function loadStats(supabase: SupabaseClient) {
-  return must(await supabase.rpc("bootstrap_owner"), "bootstrap_owner") as UserStats;
+  const stats = must(await supabase.rpc("bootstrap_owner"), "bootstrap_owner") as UserStats;
+  const extras = await supabase.rpc("bootstrap_extras");
+  if (extras.error) console.error("[bootstrap_extras]", extras.error.message);
+  return stats;
 }
 
 export async function loadDashboardData(supabase: SupabaseClient): Promise<DashboardData> {

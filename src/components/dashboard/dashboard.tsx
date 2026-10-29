@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Cpu, LogOut, Plus, Salad, Settings2 } from "lucide-react";
+import { Cpu, LogOut, Plus, Salad, ScanLine, Settings2, UserRound } from "lucide-react";
+import Link from "next/link";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
@@ -238,6 +239,14 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
               {WEEKDAY_SHORT[today.weekday].toUpperCase()} {today.isoDate} · {userEmail}
             </p>
           </div>
+          <nav className="flex items-center gap-2">
+            <Link href="/character" className={buttonVariants({ variant: "outline", size: "sm", className: "font-mono text-xs" })}>
+              <UserRound /> CHARACTER
+            </Link>
+            <Link href="/body-scan" className={buttonVariants({ variant: "outline", size: "sm", className: "font-mono text-xs" })}>
+              <ScanLine /> BODY SCAN
+            </Link>
+          </nav>
           <label
             className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors ${
               editMode ? "border-fuchsia-400/70 bg-fuchsia-400/10 text-fuchsia-200" : "border-border text-muted-foreground"
