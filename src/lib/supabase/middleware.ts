@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isOwnerEmail } from "@/lib/config";
 
-const PUBLIC_PATHS = ["/login", "/auth/callback"];
+// The cron route authenticates itself with CRON_SECRET.
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/journal/cron"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

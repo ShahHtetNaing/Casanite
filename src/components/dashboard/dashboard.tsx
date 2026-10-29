@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { Plus, Salad, Settings2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
@@ -20,6 +21,7 @@ import { GroupCard, type RoutineHandlers } from "./group-card";
 import { GuitarBanner } from "./guitar-banner";
 import { HealthPanel, type HealthFormValues } from "./health-panel";
 import { StatsHud } from "./stats-hud";
+import { WeeklyReportCard } from "@/components/journal/weekly-report-card";
 import { useGoogleData } from "./use-google-data";
 
 const NON_QUEST_KINDS = new Set(["diet", "goal"]);
@@ -247,6 +249,7 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
 
         <GuitarBanner guitarClasses={guitarClasses} />
         <StatsHud stats={stats} questsDone={questsDone} questsTotal={questItems.length} />
+        <WeeklyReportCard report={data.latestReport} />
 
         <Tabs defaultValue="today" className="gap-4">
           <TabsList className="w-full justify-start overflow-x-auto overflow-y-hidden sm:w-fit">
@@ -282,6 +285,9 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
                 <section className="neon-panel p-4">
                   <h3 className="mb-2 flex items-center gap-1.5 text-sm font-bold text-emerald-600 dark:text-emerald-300">
                     <Salad className="size-4" /> Diet rules
+                    <Link href="/journal" className="ml-auto text-xs font-medium text-blue-600 hover:underline dark:text-blue-300">
+                      Log in Journal
+                    </Link>
                   </h3>
                   {dietGroups.length === 0 && <p className="text-xs text-muted-foreground">No diet rules.</p>}
                   {dietGroups.map((g) => (

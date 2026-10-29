@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { periodKey, zonedParts } from "./date";
-import type { Completion, HealthLog, RoutineGroup, RoutineItem, UserStats } from "./types";
+import type { Completion, HealthLog, RoutineGroup, RoutineItem, UserStats, WeeklyReport } from "./types";
 
 export interface DashboardData {
   stats: UserStats;
@@ -9,6 +9,7 @@ export interface DashboardData {
   completions: Completion[];
   recentDays: { completed_on: string }[];
   healthLogs: HealthLog[];
+  latestReport: WeeklyReport | null;
 }
 
 export function currentPeriodKeys(now = new Date()) {
@@ -41,7 +42,7 @@ export async function loadStats(supabase: SupabaseClient) {
 
 export async function loadDashboardData(supabase: SupabaseClient): Promise<DashboardData> {
   const stats = await loadStats(supabase);
-  const [groups, items, completions, recentDays, healthLogs] = await Promise.all([
+  const [groups, items, completions, recentDays, healthLogs, latestReport] = await Promise.all([
     supabase.from("routine_groups").select("*").order("sort_order").order("created_at"),
     supabase.from("routines_and_goals").select("*").order("sort_order").order("created_at"),
     supabase
@@ -50,7 +51,14 @@ export async function loadDashboardData(supabase: SupabaseClient): Promise<Dashb
       .in("period_key", currentPeriodKeys()),
     supabase.from("completions").select("completed_on").gte("completed_on", daysAgoIso(13)),
     supabase.from("health_logs").select("*").order("logged_at", { ascending: true }).limit(365),
+    supabase
+      .from("weekly_reports")
+      .select("id, week_start, week_end, stats, report, source, updated_at")
+      .order("week_start", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
+  if (latestReport.error) console.error("[weekly_reports]", latestReport.error.message);
 
   return {
     stats,
@@ -59,5 +67,6 @@ export async function loadDashboardData(supabase: SupabaseClient): Promise<Dashb
     completions: must(completions, "completions") as Completion[],
     recentDays: must(recentDays, "completions history") as { completed_on: string }[],
     healthLogs: must(healthLogs, "health_logs") as HealthLog[],
+    latestReport: (latestReport.data ?? null) as WeeklyReport | null,
   };
 }

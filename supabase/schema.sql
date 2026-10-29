@@ -872,3 +872,76 @@ create policy owner_only on public.checklist_items for all to authenticated
   with check (user_id = auth.uid() and public.is_owner());
 revoke all on public.checklist_items from anon;
 grant select, insert, update, delete on public.checklist_items to authenticated;
+
+-- =====================================================================
+-- v5: Weekly Quest Report (AI journal) + diet check-ins (safe to re-run)
+-- =====================================================================
+create table if not exists public.weekly_reports (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  week_start  date not null,
+  week_end    date not null,
+  stats       jsonb not null,
+  report      jsonb not null,
+  source      text not null default 'manual' check (source in ('manual', 'scheduled')),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  unique (user_id, week_start)
+);
+
+create table if not exists public.diet_logs (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  item_id     uuid not null references public.routines_and_goals (id) on delete cascade,
+  day         date not null default public.app_today(),
+  followed    boolean not null,
+  created_at  timestamptz not null default now(),
+  unique (user_id, item_id, day)
+);
+create index if not exists diet_logs_user_day on public.diet_logs (user_id, day);
+
+drop trigger if exists weekly_reports_touch on public.weekly_reports;
+create trigger weekly_reports_touch before update on public.weekly_reports
+  for each row execute function public.touch_updated_at();
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['weekly_reports', 'diet_logs']
+  loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('alter table public.%I force row level security', t);
+    execute format('revoke all on public.%I from anon', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+    execute format('drop policy if exists owner_only on public.%I', t);
+    execute format(
+      'create policy owner_only on public.%I for all to authenticated
+         using (user_id = auth.uid() and public.is_owner())
+         with check (user_id = auth.uid() and public.is_owner())', t);
+  end loop;
+end $$;
+
+-- EXP / streak as of a given day, so past-week reports don't use today's numbers.
+-- Security invoker: RLS on completions still limits signed-in callers to their own rows.
+create or replace function public.stats_as_of(p_user uuid, p_day date,
+                                              out exp integer, out streak integer, out longest_streak integer)
+language sql
+stable
+as $$
+  with c as (
+    select completed_on, exp_awarded from public.completions
+     where user_id = p_user and completed_on <= p_day
+  ), days as (
+    select distinct completed_on as d from c
+  ), runs as (
+    select max(d) as end_day, count(*)::integer as len
+      from (select d, d - (row_number() over (order by d))::integer as grp from days) g
+     group by grp
+  )
+  select (select coalesce(sum(exp_awarded), 0)::integer from c),
+         coalesce((select max(len) from runs where end_day >= p_day - 1), 0),
+         coalesce((select max(len) from runs), 0);
+$$;
+revoke all on function public.stats_as_of(uuid, date) from public, anon;
+grant execute on function public.stats_as_of(uuid, date) to authenticated, service_role;
