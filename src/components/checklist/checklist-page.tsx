@@ -71,11 +71,20 @@ export function ChecklistPage({ list, initialItems }: { list: ChecklistList; ini
     setNote("");
   }
 
+  const pending = useRef(new Map<string, Promise<unknown>>());
+
   async function update(item: ChecklistItem, patch: Partial<ChecklistItem>) {
+    const keys = Object.keys(patch) as (keyof ChecklistItem)[];
+    const before = Object.fromEntries(keys.map((k) => [k, item[k]])) as Partial<ChecklistItem>;
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, ...patch } : i)));
-    const { error } = await supabase.from("checklist_items").update(patch).eq("id", item.id);
+    // Serialize writes per item so a slower earlier request can't overwrite a newer one.
+    const request = (pending.current.get(item.id) ?? Promise.resolve()).then(() =>
+      supabase.from("checklist_items").update(patch).eq("id", item.id),
+    );
+    pending.current.set(item.id, request.catch(() => undefined));
+    const { error } = await request;
     if (error) {
-      setItems((prev) => prev.map((i) => (i.id === item.id ? item : i)));
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, ...before } : i)));
       toast.error(error.message);
       return false;
     }
@@ -168,31 +177,39 @@ function Row({
 
   const cancelling = useRef(false);
 
-  function commit() {
+  function commitTitle() {
     if (cancelling.current) {
       cancelling.current = false;
       return;
     }
-    let t = title.trim();
-    if (!t) {
-      t = item.title;
-      setTitle(t);
-    }
-    const n = note.trim() || null;
-    if (t === item.title && n === item.note) return;
-    void onUpdate(item, { title: t, note: n }).then((ok) => {
-      if (ok) return;
-      setTitle(item.title);
-      setNote(item.note ?? "");
+    const saved = item.title;
+    const t = title.trim();
+    if (!t || t === saved) return setTitle(saved);
+    setTitle(t);
+    void onUpdate(item, { title: t }).then((ok) => {
+      if (!ok) setTitle((cur) => (cur === t ? saved : cur));
     });
   }
 
-  const onKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  function commitNote() {
+    if (cancelling.current) {
+      cancelling.current = false;
+      return;
+    }
+    const saved = item.note;
+    const n = note.trim() || null;
+    setNote(n ?? "");
+    if (n === saved) return;
+    void onUpdate(item, { note: n }).then((ok) => {
+      if (!ok) setNote((cur) => (cur === (n ?? "") ? (saved ?? "") : cur));
+    });
+  }
+
+  const onKey = (reset: () => void) => (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") e.currentTarget.blur();
     if (e.key === "Escape") {
       cancelling.current = true;
-      setTitle(item.title);
-      setNote(item.note ?? "");
+      reset();
       e.currentTarget.blur();
     }
   };
@@ -217,8 +234,8 @@ function Row({
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        onBlur={commit}
-        onKeyDown={onKey}
+        onBlur={commitTitle}
+        onKeyDown={onKey(() => setTitle(item.title))}
         data-bare
         aria-label={`${copy.noun} text`}
         className={cn(inputCls, "min-w-0 flex-[2]", item.done && "text-muted-foreground line-through")}
@@ -226,8 +243,8 @@ function Row({
       <Input
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        onBlur={commit}
-        onKeyDown={onKey}
+        onBlur={commitNote}
+        onKeyDown={onKey(() => setNote(item.note ?? ""))}
         data-bare
         placeholder={copy.notePlaceholder}
         aria-label="Note"
