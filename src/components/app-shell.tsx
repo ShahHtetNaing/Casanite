@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { LayoutDashboard, LogOut, Moon, ScanLine, Sun, UserRound } from "lucide-react";
+import { LayoutDashboard, ListTodo, LogOut, Moon, ScanLine, ShoppingCart, Sun, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,8 @@ const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/character", label: "Character", icon: UserRound },
   { href: "/body-scan", label: "Body Scan", icon: ScanLine },
+  { href: "/tasks", label: "Daily Tasks", icon: ListTodo },
+  { href: "/shopping", label: "Things to Buy", icon: ShoppingCart },
 ];
 
 function Brand() {
@@ -114,7 +116,7 @@ export function AppShell({
             <SignOut />
           </div>
         </div>
-        <nav className="flex gap-1 overflow-x-auto border-b px-4 py-2 md:hidden" aria-label="Main mobile">
+        <nav className="flex gap-1 overflow-x-auto border-b px-4 py-2 [scrollbar-width:none] md:hidden" aria-label="Main mobile">
           {NAV.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}

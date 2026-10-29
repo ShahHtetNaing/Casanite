@@ -843,3 +843,32 @@ create trigger evolt_scans_sync_health
 
 -- Backfill existing scans (idempotent: upserts the same scan-owned rows).
 update public.evolt_scans set weight_kg = weight_kg where weight_kg is not null;
+
+-- =====================================================================
+-- v4: Daily Tasks & Things to Buy (safe to re-run)
+-- =====================================================================
+create table if not exists public.checklist_items (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  list       text not null check (list in ('tasks', 'shopping')),
+  title      text not null check (length(btrim(title)) > 0),
+  note       text,
+  done       boolean not null default false,
+  done_at    timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists checklist_items_user_list on public.checklist_items (user_id, list, done, created_at);
+
+drop trigger if exists checklist_items_touch on public.checklist_items;
+create trigger checklist_items_touch before update on public.checklist_items
+  for each row execute function public.touch_updated_at();
+
+alter table public.checklist_items enable row level security;
+alter table public.checklist_items force row level security;
+drop policy if exists owner_only on public.checklist_items;
+create policy owner_only on public.checklist_items for all to authenticated
+  using (user_id = auth.uid() and public.is_owner())
+  with check (user_id = auth.uid() and public.is_owner());
+revoke all on public.checklist_items from anon;
+grant select, insert, update, delete on public.checklist_items to authenticated;
