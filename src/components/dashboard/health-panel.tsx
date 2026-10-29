@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import Link from "next/link";
 import { HeartPulse, Pencil, Scale, Trash2 } from "lucide-react";
 import {
   CartesianGrid,
@@ -272,6 +273,16 @@ export function HealthPanel({
                   {l.systolic != null && `${l.systolic}/${l.diastolic} `}
                   {l.heart_rate != null && `${l.heart_rate}bpm`}
                 </span>
+                {l.evolt_scan_id ? (
+                  <Link
+                    href="/body-scan"
+                    title="Synced from Body Scan; edit or delete it there"
+                    className="rounded-full border border-violet-500/30 px-2 py-0.5 text-[10px] text-violet-600 hover:bg-violet-500/10 dark:text-violet-300"
+                  >
+                    Body scan
+                  </Link>
+                ) : (
+                  <>
                 <Button variant="ghost" size="icon-xs" aria-label="Edit entry" onClick={() => setEditing(l)}>
                   <Pencil />
                 </Button>
@@ -284,6 +295,8 @@ export function HealthPanel({
                 >
                   <Trash2 />
                 </Button>
+                  </>
+                )}
               </li>
             ))}
           </ul>

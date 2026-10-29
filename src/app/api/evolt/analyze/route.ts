@@ -53,6 +53,9 @@ export async function POST(req: Request) {
       if (file.error) throw new Error(`Could not read PDF: ${file.error.message}`);
       const pdf = await getDocumentProxy(new Uint8Array(await file.data.arrayBuffer()));
       reportText = (await extractText(pdf, { mergePages: true })).text.replace(/\s+/g, " ").slice(0, 20000);
+      if (reportText.length < 200) {
+        throw new Error("Couldn't read text from this PDF (it may be a scanned image). Enter the values manually with the edit button instead.");
+      }
     }
     const prompt =
       `${reportText ? `Text extracted from my Evolt 360 body scan PDF:\n"""${reportText}"""\nExtract its values, then analyse it.` : "Analyse this Evolt 360 scan (no PDF; values below)."}\n` +
