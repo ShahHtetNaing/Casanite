@@ -921,3 +921,27 @@ begin
          with check (user_id = auth.uid() and public.is_owner())', t);
   end loop;
 end $$;
+
+-- EXP / streak as of a given day, so past-week reports don't use today's numbers.
+-- Security invoker: RLS on completions still limits signed-in callers to their own rows.
+create or replace function public.stats_as_of(p_user uuid, p_day date,
+                                              out exp integer, out streak integer, out longest_streak integer)
+language sql
+stable
+as $$
+  with c as (
+    select completed_on, exp_awarded from public.completions
+     where user_id = p_user and completed_on <= p_day
+  ), days as (
+    select distinct completed_on as d from c
+  ), runs as (
+    select max(d) as end_day, count(*)::integer as len
+      from (select d, d - (row_number() over (order by d))::integer as grp from days) g
+     group by grp
+  )
+  select (select coalesce(sum(exp_awarded), 0)::integer from c),
+         coalesce((select max(len) from runs where end_day >= p_day - 1), 0),
+         coalesce((select max(len) from runs), 0);
+$$;
+revoke all on function public.stats_as_of(uuid, date) from public, anon;
+grant execute on function public.stats_as_of(uuid, date) to authenticated, service_role;

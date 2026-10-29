@@ -7,7 +7,6 @@ import type {
   ReportWeek,
   RoutineGroup,
   RoutineItem,
-  UserStats,
   WeeklyReport,
   WeeklyReportContent,
   WeeklyStats,
@@ -28,6 +27,10 @@ function must<T>(res: { data: T | null; error: { message: string } | null }, wha
 /** Aggregates one week of activity. Every query filters by userId so it also works with the service-role client. */
 export async function collectWeeklyStats(supabase: SupabaseClient, userId: string, which: ReportWeek) {
   const { weekStart, weekEnd, days } = reportWeek(which);
+  // Snapshot as of the last counted day (today for the current week, Sunday for last week).
+  const asOf = days[days.length - 1];
+  const asOfEnd = new Date(`${asOf}T23:59:59.999+08:00`).toISOString();
+  const startTs = new Date(`${weekStart}T00:00:00+08:00`).toISOString();
   const [groupsRes, itemsRes, compRes, statsRes, tasksRes, openRes, dietRes, weightRes] = await Promise.all([
     supabase.from("routine_groups").select("*").eq("user_id", userId).eq("is_active", true).order("sort_order"),
     supabase.from("routines_and_goals").select("*").eq("user_id", userId).eq("is_active", true).order("sort_order"),
@@ -37,22 +40,29 @@ export async function collectWeeklyStats(supabase: SupabaseClient, userId: strin
       .eq("user_id", userId)
       .gte("completed_on", weekStart)
       .lte("completed_on", weekEnd),
-    supabase.from("user_stats").select("*").eq("user_id", userId).maybeSingle(),
+    supabase.rpc("stats_as_of", { p_user: userId, p_day: asOf }).single(),
     supabase
       .from("checklist_items")
       .select("title")
       .eq("user_id", userId)
       .eq("list", "tasks")
       .eq("done", true)
-      .gte("done_at", `${weekStart}T00:00:00+08:00`)
-      .lte("done_at", `${weekEnd}T23:59:59.999+08:00`),
-    supabase.from("checklist_items").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("list", "tasks").eq("done", false),
+      .gte("done_at", startTs)
+      .lte("done_at", asOfEnd),
+    supabase
+      .from("checklist_items")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("list", "tasks")
+      .lte("created_at", asOfEnd)
+      .or(`done.eq.false,done_at.gt.${asOfEnd}`),
     supabase.from("diet_logs").select("item_id, day, followed").eq("user_id", userId).gte("day", weekStart).lte("day", weekEnd),
     supabase
       .from("health_logs")
       .select("weight_kg, logged_at")
       .eq("user_id", userId)
       .not("weight_kg", "is", null)
+      .lte("logged_at", asOfEnd)
       .order("logged_at", { ascending: false })
       .limit(1),
   ]);
@@ -65,7 +75,7 @@ export async function collectWeeklyStats(supabase: SupabaseClient, userId: strin
     completed_on: string;
     exp_awarded: number;
   }[];
-  const userStats = must(statsRes, "user_stats") as UserStats | null;
+  const asOfStats = must(statsRes, "stats_as_of") as { exp: number; streak: number; longest_streak: number };
   const doneTasks = must(tasksRes, "checklist_items") as { title: string }[];
   const dietLogs = must(dietRes, "diet_logs") as { item_id: string; day: string; followed: boolean }[];
   const lastWeight = (must(weightRes, "health_logs") as { weight_kg: number; logged_at: string }[])[0];
@@ -110,7 +120,10 @@ export async function collectWeeklyStats(supabase: SupabaseClient, userId: strin
   for (const group of groups) {
     const fixedDays = group.days_of_week && group.days_of_week.length > 0 && group.days_of_week.length < 7;
     if (group.kind !== "exercise" || !fixedDays) continue;
-    const groupItems = items.filter((i) => i.group_id === group.id && i.is_trackable);
+    // Weekly-frequency exercises are reported under `weekly`, not as per-session sets.
+    const groupItems = items.filter(
+      (i) => i.group_id === group.id && i.is_trackable && effectiveFrequency(i, group) === "daily",
+    );
     const gym = { title: group.title, scheduledDays: 0, sessionsDone: 0, itemsDone: 0, itemsScheduled: 0 };
     for (const date of days) {
       const scheduled = groupItems.filter((i) => existedOn(i, date) && isScheduledOn(i, group, weekdayOf(date)));
@@ -130,21 +143,22 @@ export async function collectWeeklyStats(supabase: SupabaseClient, userId: strin
       const logs = dietLogs.filter((l) => l.item_id === i.id);
       const followed = logs.filter((l) => l.followed).length;
       const missed = logs.length - followed;
-      return { title: i.title, followed, missed, unlogged: Math.max(days.length - logs.length, 0) };
+      const eligible = days.filter((d) => existedOn(i, d)).length;
+      return { title: i.title, followed, missed, unlogged: Math.max(eligible - logs.length, 0) };
     });
 
-  const exp = userStats?.exp ?? 0;
+  const exp = asOfStats.exp;
   const expGained = completions.reduce((s, c) => s + (c.exp_awarded ?? 0), 0);
   const stats: WeeklyStats = {
     weekStart,
     weekEnd,
     daysElapsed: days.length,
-    level: userStats?.level ?? 1,
+    level: Math.floor(exp / EXP_PER_LEVEL) + 1,
     levelAtStart: Math.floor(Math.max(exp - expGained, 0) / EXP_PER_LEVEL) + 1,
     exp,
     expGained,
-    streak: userStats?.streak ?? 0,
-    longestStreak: userStats?.longest_streak ?? 0,
+    streak: asOfStats.streak,
+    longestStreak: asOfStats.longest_streak,
     activeDays: new Set(completions.map((c) => c.completed_on)).size,
     quests: {
       done: byDay.reduce((s, d) => s + d.done, 0),
