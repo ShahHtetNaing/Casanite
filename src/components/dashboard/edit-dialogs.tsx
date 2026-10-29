@@ -30,12 +30,26 @@ import { colorStyle } from "./colors";
 const selectClass =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 [&>option]:bg-popover";
 
-function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
+const LABELLABLE: unknown[] = [Input, Textarea, "select"];
+
+function Field({
+  label,
+  children,
+  hint,
+  error,
+}: {
+  label: string;
+  children: React.ReactNode;
+  hint?: string;
+  error?: string | false;
+}) {
   const id = useId();
+  const control = isValidElement<{ id?: string }>(children) && LABELLABLE.includes(children.type) ? children : null;
   return (
     <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {isValidElement<{ id?: string }>(children) ? cloneElement(children, { id }) : children}
+      <Label htmlFor={control ? id : undefined}>{label}</Label>
+      {control ? cloneElement(control, { id }) : children}
+      {error && <p className="text-[11px] text-rose-400">{error}</p>}
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -317,7 +331,7 @@ function ItemForm({
       <Field label="Sets / reps / details" hint='e.g. "3x8-10", "2x45s/side", "20-30m"'>
         <Input value={details} onChange={(e) => setDetails(e.target.value)} />
       </Field>
-      <Field label="YouTube tutorial URL">
+      <Field label="YouTube tutorial URL" error={youtubeInvalid && "Must be a youtube.com or youtu.be link."}>
         <Input
           type="url"
           value={youtube}
@@ -325,7 +339,6 @@ function ItemForm({
           placeholder="https://www.youtube.com/watch?v=…"
           aria-invalid={youtubeInvalid}
         />
-        {youtubeInvalid && <p className="text-[11px] text-rose-400">Must be a youtube.com or youtu.be link.</p>}
       </Field>
       <Field label="Notes">
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
