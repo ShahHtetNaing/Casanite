@@ -237,7 +237,7 @@ export function BodyScan({
             <div
               key={s.id}
               className={`flex flex-wrap items-center gap-3 rounded-lg border p-2.5 ${
-                s.id === selectedId ? "border-blue-400/60 bg-blue-400/5" : "border-border/60"
+                s.id === selectedId ? "border-primary/50 bg-primary/5" : "border-border/60"
               }`}
             >
               <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setSelectedId(s.id)}>
