@@ -1,30 +1,20 @@
 import { ownerRoute } from "@/lib/owner-route";
-import { generate, generateJson, type GeminiContent } from "@/lib/gemini";
+import { chat, chatJson, type ChatMessage } from "@/lib/ai";
 import type { CareerEntry, Profile } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 type ChatTurn = { role: "user" | "model"; text: string };
 
-const ANALYSIS_SCHEMA = {
-  type: "object",
-  properties: {
-    rarity_score: { type: "integer", description: "0-100, how rare this skill combination is for the person's age" },
-    rarity_label: { type: "string", description: "e.g. Common, Uncommon, Rare, Epic, Legendary" },
-    summary: { type: "string" },
-    strengths: { type: "array", items: { type: "string" } },
-    improvements: { type: "array", items: { type: "string" } },
-    next_certifications: {
-      type: "array",
-      items: { type: "object", properties: { name: { type: "string" }, why: { type: "string" } }, required: ["name", "why"] },
-    },
-    project_ideas: {
-      type: "array",
-      items: { type: "object", properties: { title: { type: "string" }, why: { type: "string" } }, required: ["title", "why"] },
-    },
-  },
-  required: ["rarity_score", "rarity_label", "summary", "strengths", "improvements", "next_certifications", "project_ideas"],
-};
+const ANALYSIS_SHAPE = `{
+  "rarity_score": integer 0-100 (how rare this skill combination is for the person's age),
+  "rarity_label": "Common" | "Uncommon" | "Rare" | "Epic" | "Legendary",
+  "summary": string,
+  "strengths": string[],
+  "improvements": string[],
+  "next_certifications": [{ "name": string, "why": string }],
+  "project_ideas": [{ "title": string, "why": string }]
+}`;
 
 function age(birth: string | null) {
   if (!birth) return null;
@@ -70,31 +60,22 @@ export async function POST(req: Request) {
     if (body.mode === "chat") {
       const turns = (body.messages ?? []).slice(-20).filter((m) => m.text?.trim());
       if (!turns.length || turns[turns.length - 1].role !== "user") throw new Error("Send a question first.");
-      const contents: GeminiContent[] = [
-        { role: "user", parts: [{ text: `My profile:\n${context}` }] },
-        { role: "model", parts: [{ text: "Got it. What would you like advice on?" }] },
-        ...turns.map((t) => ({ role: t.role, parts: [{ text: t.text.slice(0, 4000) }] })),
+      const messages: ChatMessage[] = [
+        { role: "system", content: SYSTEM + " Answer concisely in Markdown." },
+        { role: "user", content: `My profile:\n${context}` },
+        { role: "assistant", content: "Got it. What would you like advice on?" },
+        ...turns.map((t) => ({ role: t.role === "model" ? ("assistant" as const) : ("user" as const), content: t.text.slice(0, 4000) })),
       ];
-      return { reply: await generate({ system: SYSTEM + " Answer concisely in Markdown.", contents }) };
+      return { reply: await chat(messages) };
     }
 
-    const analysis = await generateJson({
-      system: SYSTEM,
-      schema: ANALYSIS_SCHEMA,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text:
-                `Evaluate this profile. Rate how rare the skill combination is for someone of this age (0-100), ` +
-                `list strengths, ways to improve, the next 3-5 IT/cybersecurity certifications to pursue (in order), ` +
-                `and 3-5 portfolio project ideas.\n\n${context}`,
-            },
-          ],
-        },
-      ],
-    });
+    const analysis = await chatJson(
+      SYSTEM,
+      `Evaluate this profile. Rate how rare the skill combination is for someone of this age (0-100), ` +
+        `list strengths, ways to improve, the next 3-5 IT/cybersecurity certifications to pursue (in order), ` +
+        `and 3-5 portfolio project ideas.\n\n${context}`,
+      ANALYSIS_SHAPE,
+    );
     return { analysis };
   });
 }

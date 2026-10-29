@@ -187,7 +187,7 @@ export function BodyScan({
   const approved = suggestions.filter((s) => s.status === "approved");
 
   return (
-    <PageShell title="BODY SCAN" subtitle="Evolt 360 reports · private storage · Gemini analysis">
+    <PageShell title="BODY SCAN" subtitle="Evolt 360 reports · private storage · AI analysis">
       <div className="grid gap-4 md:grid-cols-4">
         <Metric label="WEIGHT" value={latest ? `${lb(latest.weight_kg)} lb` : "—"} sub={latest?.weight_kg ? `${latest.weight_kg} kg` : undefined} />
         <Metric label="GOAL" value={`${GOAL_LB[0]}–${GOAL_LB[1]} lb`} sub={latest?.weight_kg ? goalDelta(lb(latest.weight_kg)!) : undefined} />
@@ -303,7 +303,7 @@ export function BodyScan({
           <CardContent className="grid gap-3 text-sm">
             {!selected?.analysis ? (
               <p className="text-xs text-muted-foreground">
-                Select a scan and click Analyze. Gemini reads the PDF, summarises your body composition and suggests exercises for
+                Select a scan and click Analyze. The AI reads the PDF, summarises your body composition and suggests exercises for
                 145–150 lb and calisthenics/flip strength.
               </p>
             ) : (

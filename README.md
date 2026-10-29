@@ -9,8 +9,8 @@ Gamified personal health, fitness & productivity tracker. Next.js 15 (App Router
 - **Today view**: daily flexibility + today's gym day + habits/hygiene/academic, with YouTube **Tutorial** buttons.
 - **Goals** (monthly / yearly), **Diet rules** widget, **Health** tab (weight, BMI, BP, heart rate — with charts and full CRUD).
 - **Character Sheet** (`/character`): RPG "About Me" page with education, age, experience, certificates, volunteer work, projects and awards, seeded from https://mysite2024.s3.us-east-1.amazonaws.com/index.html. Edit Mode gives full CRUD. Routine items with a *career category* (project/certificate) create or update a career entry automatically when you complete them.
-- **AI Career Consultant** (Gemini): rarity score for your skill mix at your age, strengths, improvements, next IT/cybersecurity certs, project ideas, plus a chat box.
-- **Body Scan** (`/body-scan`): upload monthly Evolt 360 PDFs to a private Supabase Storage bucket (owner-only RLS). Gemini reads the PDF, extracts the metrics, explains your body composition and suggests exercises for the 145–150 lb + calisthenics/flip-strength goal. **Approve** writes an exercise into a routine group; it's then a normal item you can edit/delete in Edit Mode. The Aug and Sep 2026 scans are seeded as the baseline (use "Attach PDF" to store their reports).
+- **AI Career Consultant** (Groq): rarity score for your skill mix at your age, strengths, improvements, next IT/cybersecurity certs, project ideas, plus a chat box.
+- **Body Scan** (`/body-scan`): upload monthly Evolt 360 PDFs to a private Supabase Storage bucket (owner-only RLS). The server extracts the PDF text and Groq reads it, extracts the metrics, explains your body composition and suggests exercises for the 145–150 lb + calisthenics/flip-strength goal. **Approve** writes an exercise into a routine group; it's then a normal item you can edit/delete in Edit Mode. The Aug and Sep 2026 scans are seeded as the baseline (use "Attach PDF" to store their reports).
 - **Google Fit** widget (steps, active minutes, sleep + 7-day chart) and **Google Calendar** widget (doctor appointments, guitar class). On Saturdays before 10:00 (Asia/Singapore) the dashboard shows a guitar-class alert and fires a browser notification.
 
 ## 1. Install
@@ -54,9 +54,9 @@ Notes:
 - Google has deprecated the Fitness REST API and stopped accepting new sign-ups for it; if your Cloud project can't enable it, the Fit widget will show the API error while everything else keeps working.
 - Calendar matching: events whose title/location contain words like *doctor, dr, clinic, polyclinic, hospital, dental, appointment* are shown as appointments; events containing *guitar* are used for the Saturday alert. Tweak in `src/lib/config.ts`.
 
-## 3b. Gemini (free)
-1. Create a key at https://aistudio.google.com/apikey.
-2. Add `GEMINI_API_KEY=...` to `.env.local` and to Vercel env vars (server-only; never `NEXT_PUBLIC_`). Optional: `GEMINI_MODEL` (default `gemini-2.5-flash`).
+## 3b. Groq AI (free)
+1. Create a key at https://console.groq.com/keys.
+2. Add `GROQ_API_KEY=...` to `.env.local` and to Vercel env vars (server-only; never `NEXT_PUBLIC_`). Optional: `GROQ_MODEL` (default `llama-3.3-70b-versatile`).
 Without a key the app works; the AI buttons just show a "not configured" message.
 
 ## 4. Run / deploy
@@ -70,15 +70,15 @@ Deploy free on Vercel: import the repo, add the same env vars, then add the Verc
 | Table | Purpose |
 |---|---|
 | `user_stats` | level, exp, streak, longest_streak, last_active_date |
-| `health_logs` | weight_kg, height_cm, **bmi** (generated), systolic, diastolic, heart_rate, notes |
+| `health_logs` | (Evolt scans auto-create/update a linked row via `evolt_scan_id`) weight_kg, height_cm, **bmi** (generated), systolic, diastolic, heart_rate, notes |
 | `routine_groups` | editable blocks: title, kind, frequency, days_of_week (0=Sun), color, order |
 | `routines_and_goals` | editable items: title, details (sets/reps), **youtube_url**, notes, frequency/days override, target_count, target_date, is_trackable |
 | `completions` | one row per completion (10 EXP), keyed by period (day/ISO week/month/year/once) |
 | `google_tokens` | Google refresh token captured at sign-in |
 | `profile` | name, birth date, headline, location, skills (Character Sheet header) |
 | `career_entries` | education / experience / certificate / volunteer / project / award; `source_item_id` links auto-created entries to routine items |
-| `evolt_scans` | scan date, key metrics, full `metrics` JSON, `pdf_path` in bucket `evolt-scans`, Gemini `analysis` |
-| `ai_suggestions` | Gemini exercise suggestions; `approve_suggestion(suggestion, group)` turns one into a routine item |
+| `evolt_scans` | scan date, key metrics, full `metrics` JSON, `pdf_path` in bucket `evolt-scans`, AI `analysis` |
+| `ai_suggestions` | AI exercise suggestions; `approve_suggestion(suggestion, group)` turns one into a routine item |
 | Storage `evolt-scans` | private, PDF only, 10 MB; files at `<user id>/...`, owner-only policies |
 
 All tables: RLS `user_id = auth.uid() AND is_owner()` (owner email check on the JWT); `anon` has no access.
@@ -92,9 +92,9 @@ src/app/login/                    Google sign-in
 src/app/auth/callback|signout     OAuth code exchange (stores Google refresh token)
 src/app/api/google/fit|calendar   Google API routes
 src/app/character, body-scan      Character Sheet + Evolt pages
-src/app/api/ai/career             Gemini career analysis + chat
-src/app/api/evolt/analyze         Gemini PDF parse + exercise suggestions
-src/lib/gemini.ts                 server-only Gemini REST helper
+src/app/api/ai/career             Groq career analysis + chat
+src/app/api/evolt/analyze         PDF text extraction (unpdf) + Groq exercise suggestions
+src/lib/ai.ts                     server-only Groq (OpenAI-compatible) helper
 src/lib/google/                   Fit + Calendar clients
 src/components/dashboard/         HUD, Edit Mode dialogs, widgets, health charts
 ```

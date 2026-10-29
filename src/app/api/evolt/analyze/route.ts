@@ -1,61 +1,25 @@
 import { ownerRoute } from "@/lib/owner-route";
-import { generateJson, type GeminiPart } from "@/lib/gemini";
+import { extractText, getDocumentProxy } from "unpdf";
+import { chatJson } from "@/lib/ai";
 import type { EvoltAnalysis, EvoltScan } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const NUM = { type: "number", nullable: true };
-const SCHEMA = {
-  type: "object",
-  properties: {
-    extracted: {
-      type: "object",
-      description: "Values read from the scan. null if not present.",
-      properties: {
-        scanned_at: { type: "string", nullable: true, description: "ISO 8601 date-time of the scan" },
-        weight_kg: NUM,
-        body_fat_pct: NUM,
-        body_fat_mass_kg: NUM,
-        skeletal_muscle_kg: NUM,
-        lean_body_mass_kg: NUM,
-        visceral_fat_level: NUM,
-        bmr_kcal: NUM,
-        bio_age: NUM,
-        bwi_score: NUM,
-        other_metrics: {
-          type: "array",
-          items: { type: "object", properties: { name: { type: "string" }, value: { type: "string" } }, required: ["name", "value"] },
-        },
-      },
-    },
-    analysis: {
-      type: "object",
-      properties: {
-        overview: { type: "string" },
-        strengths: { type: "array", items: { type: "string" } },
-        improvements: { type: "array", items: { type: "string" } },
-        goal_plan: { type: "string" },
-        exercises: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              title: { type: "string" },
-              details: { type: "string", description: "sets x reps or duration, e.g. 4x6-8" },
-              rationale: { type: "string" },
-              youtube_url: { type: "string", nullable: true },
-              suggested_day: { type: "integer", nullable: true, description: "0=Sun..6=Sat" },
-            },
-            required: ["title", "details", "rationale"],
-          },
-        },
-      },
-      required: ["overview", "strengths", "improvements", "goal_plan", "exercises"],
-    },
+const SHAPE = `{
+  "extracted": {  // values read from the scan report; null when absent
+    "scanned_at": ISO 8601 date-time string | null,
+    "weight_kg": number | null, "body_fat_pct": number | null, "body_fat_mass_kg": number | null,
+    "skeletal_muscle_kg": number | null, "lean_body_mass_kg": number | null, "visceral_fat_level": number | null,
+    "bmr_kcal": number | null, "bio_age": number | null, "bwi_score": number | null,
+    "other_metrics": [{ "name": string, "value": string }]
   },
-  required: ["extracted", "analysis"],
-};
+  "analysis": {
+    "overview": string, "strengths": string[], "improvements": string[], "goal_plan": string,
+    "exercises": [{ "title": string, "details": string (sets x reps or duration, e.g. "4x6-8"), "rationale": string,
+                   "youtube_url": string | null, "suggested_day": integer 0-6 (0=Sun) | null }]
+  }
+}`;
 
 type Result = {
   extracted: Partial<Record<keyof EvoltScan, number | string | null>> & { other_metrics?: { name: string; value: string }[] };
@@ -83,28 +47,26 @@ export async function POST(req: Request) {
       supabase.from("routines_and_goals").select("title, details").eq("is_active", true),
     ]);
 
-    const parts: GeminiPart[] = [];
+    let reportText = "";
     if (s.pdf_path) {
       const file = await supabase.storage.from("evolt-scans").download(s.pdf_path);
       if (file.error) throw new Error(`Could not read PDF: ${file.error.message}`);
-      const data = Buffer.from(await file.data.arrayBuffer()).toString("base64");
-      parts.push({ inline_data: { mime_type: "application/pdf", data } });
+      const pdf = await getDocumentProxy(new Uint8Array(await file.data.arrayBuffer()));
+      reportText = (await extractText(pdf, { mergePages: true })).text.replace(/\s+/g, " ").slice(0, 20000);
     }
-    parts.push({
-      text:
-        `${s.pdf_path ? "The attached PDF is my Evolt 360 body scan. Extract its values, then analyse it." : "Analyse this Evolt 360 scan (no PDF; values below)."}\n` +
-        `Stored values: ${JSON.stringify({ ...s, analysis: undefined, pdf_path: undefined })}\n` +
-        `Scan history: ${JSON.stringify(history ?? [])}\n` +
-        `Current routine (do not repeat these): ${(items ?? []).map((i) => i.title).join("; ")}`,
-    });
+    const prompt =
+      `${reportText ? `Text extracted from my Evolt 360 body scan PDF:\n"""${reportText}"""\nExtract its values, then analyse it.` : "Analyse this Evolt 360 scan (no PDF; values below)."}\n` +
+      `Stored values: ${JSON.stringify({ ...s, analysis: undefined, pdf_path: undefined })}\n` +
+      `Scan history: ${JSON.stringify(history ?? [])}\n` +
+      `Current routine (do not repeat these): ${(items ?? []).map((i) => i.title).join("; ")}`;
 
-    const result = await generateJson<Result>({ system: SYSTEM, schema: SCHEMA, contents: [{ role: "user", parts }] });
+    const result = await chatJson<Result>(SYSTEM, prompt, SHAPE);
     const x = result.extracted ?? {};
-    const pick = (k: keyof EvoltScan) => (s.pdf_path && x[k] != null ? x[k] : s[k]);
+    const pick = (k: keyof EvoltScan) => (reportText && x[k] != null ? x[k] : s[k]);
     const metrics = { ...s.metrics };
-    for (const m of x.other_metrics ?? []) metrics[m.name] = m.value;
+    for (const m of Array.isArray(x.other_metrics) ? x.other_metrics : []) metrics[m.name] = m.value;
 
-    const scannedAt = s.pdf_path && typeof x.scanned_at === "string" && !Number.isNaN(Date.parse(x.scanned_at)) ? x.scanned_at : s.scanned_at;
+    const scannedAt = reportText && typeof x.scanned_at === "string" && !Number.isNaN(Date.parse(x.scanned_at)) ? x.scanned_at : s.scanned_at;
     const { data: updated, error: upErr } = await supabase
       .from("evolt_scans")
       .update({
@@ -128,7 +90,7 @@ export async function POST(req: Request) {
     if (upErr) throw new Error(upErr.message);
 
     await supabase.from("ai_suggestions").delete().eq("scan_id", s.id).eq("status", "pending");
-    const rows = (result.analysis.exercises ?? []).slice(0, 8).map((e) => ({
+    const rows = (Array.isArray(result.analysis?.exercises) ? result.analysis.exercises : []).slice(0, 8).map((e) => ({
       scan_id: s.id,
       title: e.title,
       details: e.details,

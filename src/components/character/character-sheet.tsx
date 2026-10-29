@@ -529,7 +529,7 @@ function CareerConsultant() {
       <CardContent className="grid gap-4">
         {!analysis && !loading && (
           <p className="text-xs text-muted-foreground">
-            Gemini rates how rare your skill combination is for your age, then suggests improvements, next certifications and projects.
+            The AI rates how rare your skill combination is for your age, then suggests improvements, next certifications and projects.
           </p>
         )}
         {analysis && (
