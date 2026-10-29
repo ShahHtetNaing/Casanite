@@ -77,7 +77,9 @@ export function ChecklistPage({ list, initialItems }: { list: ChecklistList; ini
     if (error) {
       setItems((prev) => prev.map((i) => (i.id === item.id ? item : i)));
       toast.error(error.message);
+      return false;
     }
+    return true;
   }
 
   async function remove(item: ChecklistItem) {
@@ -139,9 +141,8 @@ export function ChecklistPage({ list, initialItems }: { list: ChecklistList; ini
             <p className="py-8 text-center text-sm text-muted-foreground">Nothing here yet. Add your first {copy.noun} above.</p>
           ) : (
             <ul className="grid gap-1.5">
-              {/* Key on saved text so the inline drafts reset when an update is rolled back. */}
               {sorted.map((item) => (
-                <Row key={`${item.id}:${item.title}:${item.note ?? ""}`} item={item} copy={copy} onUpdate={update} onRemove={remove} />
+                <Row key={item.id} item={item} copy={copy} onUpdate={update} onRemove={remove} />
               ))}
             </ul>
           )}
@@ -159,7 +160,7 @@ function Row({
 }: {
   item: ChecklistItem;
   copy: (typeof COPY)[ChecklistList];
-  onUpdate: (item: ChecklistItem, patch: Partial<ChecklistItem>) => void;
+  onUpdate: (item: ChecklistItem, patch: Partial<ChecklistItem>) => Promise<boolean>;
   onRemove: (item: ChecklistItem) => void;
 }) {
   const [title, setTitle] = useState(item.title);
@@ -178,7 +179,12 @@ function Row({
       setTitle(t);
     }
     const n = note.trim() || null;
-    if (t !== item.title || n !== item.note) onUpdate(item, { title: t, note: n });
+    if (t === item.title && n === item.note) return;
+    void onUpdate(item, { title: t, note: n }).then((ok) => {
+      if (ok) return;
+      setTitle(item.title);
+      setNote(item.note ?? "");
+    });
   }
 
   const onKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
