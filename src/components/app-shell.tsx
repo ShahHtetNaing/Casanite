@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { LayoutDashboard, ListTodo, LogOut, Moon, ScanLine, ShoppingCart, Sun, UserRound } from "lucide-react";
+import { BookOpen, LayoutDashboard, ListTodo, LogOut, Moon, ScanLine, ShoppingCart, Sun, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ const NAV = [
   { href: "/body-scan", label: "Body Scan", icon: ScanLine },
   { href: "/tasks", label: "Daily Tasks", icon: ListTodo },
   { href: "/shopping", label: "Things to Buy", icon: ShoppingCart },
+  { href: "/journal", label: "Journal", icon: BookOpen },
 ];
 
 function Brand() {

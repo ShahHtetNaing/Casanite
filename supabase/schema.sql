@@ -872,3 +872,52 @@ create policy owner_only on public.checklist_items for all to authenticated
   with check (user_id = auth.uid() and public.is_owner());
 revoke all on public.checklist_items from anon;
 grant select, insert, update, delete on public.checklist_items to authenticated;
+
+-- =====================================================================
+-- v5: Weekly Quest Report (AI journal) + diet check-ins (safe to re-run)
+-- =====================================================================
+create table if not exists public.weekly_reports (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  week_start  date not null,
+  week_end    date not null,
+  stats       jsonb not null,
+  report      jsonb not null,
+  source      text not null default 'manual' check (source in ('manual', 'scheduled')),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  unique (user_id, week_start)
+);
+
+create table if not exists public.diet_logs (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  item_id     uuid not null references public.routines_and_goals (id) on delete cascade,
+  day         date not null default public.app_today(),
+  followed    boolean not null,
+  created_at  timestamptz not null default now(),
+  unique (user_id, item_id, day)
+);
+create index if not exists diet_logs_user_day on public.diet_logs (user_id, day);
+
+drop trigger if exists weekly_reports_touch on public.weekly_reports;
+create trigger weekly_reports_touch before update on public.weekly_reports
+  for each row execute function public.touch_updated_at();
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['weekly_reports', 'diet_logs']
+  loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('alter table public.%I force row level security', t);
+    execute format('revoke all on public.%I from anon', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+    execute format('drop policy if exists owner_only on public.%I', t);
+    execute format(
+      'create policy owner_only on public.%I for all to authenticated
+         using (user_id = auth.uid() and public.is_owner())
+         with check (user_id = auth.uid() and public.is_owner())', t);
+  end loop;
+end $$;

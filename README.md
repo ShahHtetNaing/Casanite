@@ -59,6 +59,13 @@ Notes:
 2. Add `GROQ_API_KEY=...` to `.env.local` and to Vercel env vars (server-only; never `NEXT_PUBLIC_`). Optional: `GROQ_MODEL` (default `openai/gpt-oss-120b`, with automatic fallback if Groq retires it).
 Without a key the app works; the AI buttons just show a "not configured" message.
 
+## 3c. Weekly Quest Report (Journal)
+The Journal page (`/journal`) shows an RPG-style weekly report written by Groq from the week's quests, streak/EXP, Push/Pull/Legs/Cardio sessions, Daily Tasks and diet check-ins. Click **Generate now** (this week so far) or **Last week** any time.
+
+To also generate it automatically every Sunday at 23:00 Singapore time (`vercel.json` cron, free on Hobby), add these server-only Vercel env vars:
+- `CRON_SECRET`: any long random string. Vercel sends it to `/api/journal/cron`, which rejects every other caller.
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase → Project Settings → API → service_role/secret key. The cron has no browser session, so it uses this key to read your data and save the report.
+
 ## 4. Run / deploy
 ```bash
 npm run dev      # http://localhost:3000

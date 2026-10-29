@@ -1,5 +1,5 @@
 import { APP_TIMEZONE } from "./config";
-import type { Frequency, RoutineGroup, RoutineItem } from "./types";
+import type { Frequency, ReportWeek, RoutineGroup, RoutineItem } from "./types";
 
 export const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -76,4 +76,15 @@ export function formatDays(days: number[] | null) {
     .sort()
     .map((d) => WEEKDAY_SHORT[d])
     .join(" / ");
+}
+
+const DAY_MS = 86_400_000;
+
+/** Monday–Sunday week (app timezone) containing today, or the one before it. `elapsed` stops at today. */
+export function reportWeek(which: ReportWeek = "current", now = new Date()) {
+  const p = zonedParts(now);
+  const todayMs = Date.UTC(p.year, p.month - 1, p.day);
+  const mondayMs = todayMs - ((p.weekday + 6) % 7) * DAY_MS - (which === "previous" ? 7 * DAY_MS : 0);
+  const all = Array.from({ length: 7 }, (_, i) => new Date(mondayMs + i * DAY_MS).toISOString().slice(0, 10));
+  return { weekStart: all[0], weekEnd: all[6], all, days: all.filter((d) => d <= p.isoDate), today: p.isoDate };
 }

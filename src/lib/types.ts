@@ -196,3 +196,55 @@ export type ChecklistItem = {
   done_at: string | null;
   created_at: string;
 };
+
+export type ReportWeek = "current" | "previous";
+
+export interface WeeklyStats {
+  weekStart: string;
+  weekEnd: string;
+  daysElapsed: number;
+  level: number;
+  levelAtStart: number;
+  exp: number;
+  expGained: number;
+  streak: number;
+  longestStreak: number;
+  activeDays: number;
+  quests: { done: number; scheduled: number };
+  byDay: { date: string; done: number; scheduled: number }[];
+  groups: { title: string; kind: ItemKind; done: number; scheduled: number }[];
+  gym: { title: string; scheduledDays: number; sessionsDone: number; itemsDone: number; itemsScheduled: number }[];
+  weekly: { title: string; done: number; target: number }[];
+  tasks: { completed: number; open: number; completedTitles: string[] };
+  diet: { title: string; followed: number; missed: number; unlogged: number }[];
+  weight: { kg: number; on: string } | null;
+}
+
+export interface WeeklyReportContent {
+  title: string;
+  rank: "S" | "A" | "B" | "C" | "D";
+  summary: string;
+  streak_message: string;
+  victories: string[];
+  weak_points: string[];
+  stat_adjustments: { stat: string; change: string; reason: string }[];
+  habit_tweaks: string[];
+  focus_areas: string[];
+}
+
+export interface WeeklyReport {
+  id: string;
+  week_start: string;
+  week_end: string;
+  stats: WeeklyStats;
+  report: WeeklyReportContent;
+  source: "manual" | "scheduled";
+  updated_at: string;
+}
+
+export interface DietLog {
+  id: string;
+  item_id: string;
+  day: string;
+  followed: boolean;
+}
