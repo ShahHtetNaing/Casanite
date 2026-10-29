@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { HeartPulse, Pencil, Scale, Trash2 } from "lucide-react";
 import {
   CartesianGrid,
@@ -40,8 +40,8 @@ function bmiLabel(bmi: number) {
 }
 
 function bpLabel(sys: number, dia: number) {
-  if (sys >= 140 || dia >= 90) return "High";
-  if (sys >= 130 || dia >= 80) return "Elevated (stage 1)";
+  if (sys >= 140 || dia >= 90) return "High (stage 2)";
+  if (sys >= 130 || dia >= 80) return "High (stage 1)";
   if (sys >= 120) return "Elevated";
   return "Normal";
 }
@@ -67,6 +67,7 @@ function HealthForm({
   const [hr, setHr] = useState(initial?.heart_rate?.toString() ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [saving, setSaving] = useState(false);
+  const fid = useId();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -105,19 +106,19 @@ function HealthForm({
   return (
     <form onSubmit={submit} className="grid gap-3">
       <div className="grid gap-1.5">
-        <Label>When</Label>
-        <Input type="datetime-local" value={loggedAt} onChange={(e) => setLoggedAt(e.target.value)} required />
+        <Label htmlFor={`${fid}-when`}>When</Label>
+        <Input id={`${fid}-when`} type="datetime-local" value={loggedAt} onChange={(e) => setLoggedAt(e.target.value)} required />
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {fields.map(([label, value, set, step, min, max]) => (
+        {fields.map(([label, value, set, step, min, max], i) => (
           <div key={label} className="grid gap-1.5">
-            <Label>{label}</Label>
-            <Input type="number" inputMode="decimal" step={step} min={min} max={max} value={value} onChange={(e) => set(e.target.value)} />
+            <Label htmlFor={`${fid}-f${i}`}>{label}</Label>
+            <Input id={`${fid}-f${i}`} type="number" inputMode="decimal" step={step} min={min} max={max} value={value} onChange={(e) => set(e.target.value)} />
           </div>
         ))}
         <div className="grid gap-1.5">
-          <Label>Notes</Label>
-          <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Label htmlFor={`${fid}-notes`}>Notes</Label>
+          <Input id={`${fid}-notes`} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
       </div>
       <div className="flex gap-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { cloneElement, isValidElement, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,10 +31,11 @@ const selectClass =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 [&>option]:bg-popover";
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
+  const id = useId();
   return (
     <div className="grid gap-1.5">
-      <Label>{label}</Label>
-      {children}
+      <Label htmlFor={id}>{label}</Label>
+      {isValidElement<{ id?: string }>(children) ? cloneElement(children, { id }) : children}
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
     </div>
   );

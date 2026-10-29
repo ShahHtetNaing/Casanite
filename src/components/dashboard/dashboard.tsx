@@ -258,7 +258,7 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
         <StatsHud stats={stats} questsDone={questsDone} questsTotal={questItems.length} />
 
         <Tabs defaultValue="today" className="gap-4">
-          <TabsList className="w-full justify-start overflow-x-auto sm:w-fit">
+          <TabsList className="w-full justify-start overflow-x-auto overflow-y-hidden sm:w-fit">
             <TabsTrigger value="today">Today</TabsTrigger>
             <TabsTrigger value="routines">All routines</TabsTrigger>
             <TabsTrigger value="goals">Goals</TabsTrigger>
