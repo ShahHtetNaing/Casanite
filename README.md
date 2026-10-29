@@ -56,7 +56,7 @@ Notes:
 
 ## 3b. Groq AI (free)
 1. Create a key at https://console.groq.com/keys.
-2. Add `GROQ_API_KEY=...` to `.env.local` and to Vercel env vars (server-only; never `NEXT_PUBLIC_`). Optional: `GROQ_MODEL` (default `llama-3.3-70b-versatile`).
+2. Add `GROQ_API_KEY=...` to `.env.local` and to Vercel env vars (server-only; never `NEXT_PUBLIC_`). Optional: `GROQ_MODEL` (default `openai/gpt-oss-120b`, with automatic fallback if Groq retires it).
 Without a key the app works; the AI buttons just show a "not configured" message.
 
 ## 4. Run / deploy
