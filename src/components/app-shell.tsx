@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -17,10 +18,17 @@ const NAV = [
 function Brand() {
   return (
     <Link href="/" className="flex items-center gap-2.5">
-      <span className="brand-gradient grid size-9 place-items-center rounded-xl text-sm font-bold text-white">C</span>
+      <Image
+        src="/avatar.jpg"
+        alt="Shah Htet Naing"
+        width={36}
+        height={36}
+        className="size-9 rounded-full object-cover ring-2 ring-primary/30"
+        priority
+      />
       <span className="leading-tight">
-        <span className="block text-sm font-semibold">Casanite</span>
-        <span className="block text-[11px] text-muted-foreground">personal workspace</span>
+        <span className="block text-sm font-semibold">Shah Htet Naing</span>
+        <span className="block text-[11px] text-muted-foreground">Casanite</span>
       </span>
     </Link>
   );
