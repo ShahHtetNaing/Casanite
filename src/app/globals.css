@@ -196,7 +196,7 @@
   color: var(--primary-foreground);
   border-color: transparent;
 }
-[data-slot="input"],
+[data-slot="input"]:not([data-bare]),
 [data-slot="textarea"],
 [data-slot="select-trigger"] {
   background: var(--card);

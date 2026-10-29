@@ -184,3 +184,15 @@ export interface AiSuggestion {
   approved_item_id: string | null;
   created_at: string;
 }
+
+export type ChecklistList = "tasks" | "shopping";
+
+export type ChecklistItem = {
+  id: string;
+  list: ChecklistList;
+  title: string;
+  note: string | null;
+  done: boolean;
+  done_at: string | null;
+  created_at: string;
+};
