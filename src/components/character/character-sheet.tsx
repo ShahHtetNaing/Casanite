@@ -20,12 +20,12 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import type { CareerCategory, CareerEntry, Profile } from "@/lib/types";
 
 const CATEGORIES: { key: CareerCategory; label: string; stat: string; icon: typeof GraduationCap; color: string }[] = [
-  { key: "education", label: "Education", stat: "INT", icon: GraduationCap, color: "text-cyan-300" },
-  { key: "experience", label: "Work Experience", stat: "XP", icon: BriefcaseBusiness, color: "text-fuchsia-300" },
-  { key: "certificate", label: "Certificates", stat: "CERT", icon: ShieldCheck, color: "text-emerald-300" },
-  { key: "project", label: "Projects", stat: "BUILD", icon: FolderGit2, color: "text-amber-300" },
-  { key: "volunteer", label: "Volunteer Work", stat: "CHA", icon: HandHeart, color: "text-rose-300" },
-  { key: "award", label: "Honors & Awards", stat: "HONOR", icon: Award, color: "text-yellow-300" },
+  { key: "education", label: "Education", stat: "INT", icon: GraduationCap, color: "text-blue-600 dark:text-blue-300" },
+  { key: "experience", label: "Work Experience", stat: "XP", icon: BriefcaseBusiness, color: "text-violet-600 dark:text-violet-300" },
+  { key: "certificate", label: "Certificates", stat: "Cert", icon: ShieldCheck, color: "text-emerald-600 dark:text-emerald-300" },
+  { key: "project", label: "Projects", stat: "Build", icon: FolderGit2, color: "text-amber-600 dark:text-amber-300" },
+  { key: "volunteer", label: "Volunteer Work", stat: "CHA", icon: HandHeart, color: "text-rose-600 dark:text-rose-300" },
+  { key: "award", label: "Honors & Awards", stat: "Honor", icon: Award, color: "text-yellow-600 dark:text-yellow-300" },
 ];
 
 const selectClass =
@@ -129,14 +129,14 @@ export function CharacterSheet({ initialProfile, initialEntries }: { initialProf
   }
 
   return (
-    <PageShell title="CHARACTER SHEET" subtitle="Career profile · mirrored from your personal website">
+    <PageShell title="Character Sheet" subtitle="Career profile · mirrored from your personal website">
       <div className="flex flex-wrap items-center justify-end gap-2">
         <label
-          className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 font-mono text-xs ${
-            editMode ? "border-fuchsia-400/70 bg-fuchsia-400/10 text-fuchsia-200" : "border-border text-muted-foreground"
+          className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 tabular-nums text-xs ${
+            editMode ? "border-violet-400/70 bg-violet-400/10 text-violet-600 dark:text-violet-300" : "border-border text-muted-foreground"
           }`}
         >
-          <Settings2 className="size-3.5" /> EDIT MODE
+          <Settings2 className="size-3.5" /> Edit mode
           <Switch checked={editMode} onCheckedChange={setEditMode} aria-label="Toggle edit mode" />
         </label>
       </div>
@@ -145,7 +145,7 @@ export function CharacterSheet({ initialProfile, initialEntries }: { initialProf
         <Card className="neon-border">
           <CardHeader className="flex flex-row items-start justify-between gap-2">
             <div>
-              <CardTitle className="font-display text-xl tracking-wider">{profile?.full_name || "Unnamed hero"}</CardTitle>
+              <CardTitle className="text-xl">{profile?.full_name || "Unnamed hero"}</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">{profile?.headline}</p>
             </div>
             {editMode && (
@@ -155,31 +155,31 @@ export function CharacterSheet({ initialProfile, initialEntries }: { initialProf
             )}
           </CardHeader>
           <CardContent className="grid gap-4">
-            <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+            <div className="grid grid-cols-3 gap-2 tabular-nums text-xs">
               <Stat label="AGE" value={age ?? "?"} />
-              <Stat label="BASE" value={profile?.location ?? "?"} />
-              <Stat label="UNLOCKED" value={completed} />
+              <Stat label="Base" value={profile?.location ?? "?"} />
+              <Stat label="Unlocked" value={completed} />
             </div>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
               {CATEGORIES.map((c) => (
                 <div key={c.key} className="rounded-lg border border-border/60 p-2 text-center">
                   <c.icon className={`mx-auto size-4 ${c.color}`} />
-                  <div className="font-mono text-lg font-bold">{entries.filter((e) => e.category === c.key).length}</div>
-                  <div className="font-mono text-[10px] text-muted-foreground">{c.stat}</div>
+                  <div className="tabular-nums text-lg font-bold">{entries.filter((e) => e.category === c.key).length}</div>
+                  <div className="tabular-nums text-[10px] text-muted-foreground">{c.stat}</div>
                 </div>
               ))}
             </div>
             {profile?.skills?.length ? (
               <div className="flex flex-wrap gap-1.5">
                 {profile.skills.map((s) => (
-                  <Badge key={s} variant="outline" className="font-mono text-[10px]">
+                  <Badge key={s} variant="outline" className="tabular-nums text-[10px]">
                     {s}
                   </Badge>
                 ))}
               </div>
             ) : null}
             {profile?.website_url && (
-              <a href={profile.website_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-cyan-300 hover:underline">
+              <a href={profile.website_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-300 hover:underline">
                 <ExternalLink className="size-3" /> Personal website
               </a>
             )}
@@ -195,7 +195,7 @@ export function CharacterSheet({ initialProfile, initialEntries }: { initialProf
           return (
             <Card key={c.key}>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className={`flex items-center gap-2 font-mono text-sm tracking-widest ${c.color}`}>
+                <CardTitle className={`flex items-center gap-2 tabular-nums text-sm ${c.color}`}>
                   <c.icon className="size-4" /> {c.label.toUpperCase()} <span className="text-muted-foreground">({list.length})</span>
                 </CardTitle>
                 {editMode && (
@@ -219,12 +219,12 @@ export function CharacterSheet({ initialProfile, initialEntries }: { initialProf
                             e.title
                           )}
                           {e.status !== "completed" && (
-                            <Badge variant="outline" className="border-amber-400/60 font-mono text-[10px] text-amber-300">
-                              {e.status === "in_progress" ? "IN PROGRESS" : "PLANNED"}
+                            <Badge variant="outline" className="border-amber-400/60 tabular-nums text-[10px] text-amber-600 dark:text-amber-300">
+                              {e.status === "in_progress" ? "In progress" : "Planned"}
                             </Badge>
                           )}
                           {e.source_item_id && (
-                            <Badge variant="outline" className="font-mono text-[10px] text-cyan-300">
+                            <Badge variant="outline" className="tabular-nums text-[10px] text-blue-600 dark:text-blue-300">
                               QUEST
                             </Badge>
                           )}
@@ -232,7 +232,7 @@ export function CharacterSheet({ initialProfile, initialEntries }: { initialProf
                         <div className="text-xs text-muted-foreground">
                           {[e.organization, e.location].filter(Boolean).join(" · ")}
                           {(e.start_date || e.end_date) && (
-                            <span className="font-mono">
+                            <span className="tabular-nums">
                               {" "}
                               · {[fmtMonth(e.start_date), e.end_date ? fmtMonth(e.end_date) : e.start_date ? "Present" : null]
                                 .filter(Boolean)
@@ -245,7 +245,7 @@ export function CharacterSheet({ initialProfile, initialEntries }: { initialProf
                       <div className="flex shrink-0 gap-1">
                         {e.status !== "completed" && (
                           <Button size="icon-sm" variant="ghost" aria-label={`Mark ${e.title} complete`} onClick={() => markComplete(e)}>
-                            <CheckCircle2 className="text-emerald-300" />
+                            <CheckCircle2 className="text-emerald-600 dark:text-emerald-300" />
                           </Button>
                         )}
                         {editMode && (
@@ -254,7 +254,7 @@ export function CharacterSheet({ initialProfile, initialEntries }: { initialProf
                               <Pencil />
                             </Button>
                             <Button size="icon-sm" variant="ghost" aria-label={`Delete ${e.title}`} onClick={() => removeEntry(e)}>
-                              <Trash2 className="text-rose-400" />
+                              <Trash2 className="text-rose-500" />
                             </Button>
                           </>
                         )}
@@ -276,9 +276,9 @@ export function CharacterSheet({ initialProfile, initialEntries }: { initialProf
 
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-cyan-400/30 bg-cyan-400/5 p-2">
+    <div className="rounded-lg border border-blue-400/30 bg-blue-400/5 p-2">
       <div className="text-[10px] text-muted-foreground">{label}</div>
-      <div className="truncate text-sm font-bold text-cyan-200">{value}</div>
+      <div className="truncate text-sm font-bold text-blue-600 dark:text-blue-300">{value}</div>
     </div>
   );
 }
@@ -519,8 +519,8 @@ function CareerConsultant() {
   return (
     <Card className="neon-border">
       <CardHeader className="flex flex-row items-center justify-between gap-2">
-        <CardTitle className="flex items-center gap-2 font-mono text-sm tracking-widest text-fuchsia-300">
-          <Bot className="size-4" /> AI CAREER CONSULTANT
+        <CardTitle className="flex items-center gap-2 tabular-nums text-sm text-violet-600 dark:text-violet-300">
+          <Bot className="size-4" /> AI career consultant
         </CardTitle>
         <Button size="sm" onClick={analyze} disabled={loading}>
           <Sparkles /> {loading ? "Analyzing…" : analysis ? "Re-analyze" : "Analyze profile"}
@@ -529,13 +529,13 @@ function CareerConsultant() {
       <CardContent className="grid gap-4">
         {!analysis && !loading && (
           <p className="text-xs text-muted-foreground">
-            Gemini rates how rare your skill combination is for your age, then suggests improvements, next certifications and projects.
+            The AI rates how rare your skill combination is for your age, then suggests improvements, next certifications and projects.
           </p>
         )}
         {analysis && (
           <div className="grid gap-3 text-sm">
             <div>
-              <div className="mb-1 flex items-center justify-between font-mono text-xs">
+              <div className="mb-1 flex items-center justify-between tabular-nums text-xs">
                 <span>RARITY: {analysis.rarity_label.toUpperCase()}</span>
                 <span>{analysis.rarity_score}/100</span>
               </div>
@@ -554,13 +554,13 @@ function CareerConsultant() {
               <div
                 key={i}
                 className={`whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${
-                  m.role === "user" ? "ml-8 bg-cyan-400/10 text-cyan-100" : "mr-8 bg-fuchsia-400/10"
+                  m.role === "user" ? "ml-8 bg-blue-400/10 text-blue-600 dark:text-blue-300" : "mr-8 bg-violet-400/10"
                 }`}
               >
                 {m.text}
               </div>
             ))}
-            {sending && <div className="mr-8 rounded-lg bg-fuchsia-400/10 px-3 py-2 text-sm text-muted-foreground">Thinking…</div>}
+            {sending && <div className="mr-8 rounded-lg bg-violet-400/10 px-3 py-2 text-sm text-muted-foreground">Thinking…</div>}
           </div>
           <form onSubmit={send} className="flex gap-2">
             <Input
@@ -584,7 +584,7 @@ function AiList({ title, items }: { title: string; items: string[] }) {
   if (!items?.length) return null;
   return (
     <div>
-      <div className="mb-1 font-mono text-[11px] tracking-widest text-cyan-300">{title.toUpperCase()}</div>
+      <div className="mb-1 tabular-nums text-[11px] text-blue-600 dark:text-blue-300">{title.toUpperCase()}</div>
       <ul className="list-disc space-y-0.5 pl-5 text-xs text-muted-foreground">
         {items.map((t, i) => (
           <li key={i}>{t}</li>

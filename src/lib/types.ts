@@ -85,6 +85,7 @@ export interface HealthLog {
   systolic: number | null;
   diastolic: number | null;
   heart_rate: number | null;
+  evolt_scan_id?: string | null;
   notes: string | null;
 }
 

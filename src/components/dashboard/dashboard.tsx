@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Cpu, LogOut, Plus, Salad, ScanLine, Settings2, UserRound } from "lucide-react";
-import Link from "next/link";
+import { Plus, Salad, Settings2 } from "lucide-react";
+import { AppShell } from "@/components/app-shell";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { toast } from "sonner";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
@@ -143,7 +143,7 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
       } else {
         const s = next as UserStats;
         if (rpc === "complete_item" && s.exp > before.exp) toast.success(`+${s.exp - before.exp} EXP · ${item.title}`);
-        if (s.level > before.level) toast.success(`LEVEL UP! You reached level ${s.level}`, { duration: 6000 });
+        if (s.level > before.level) toast.success(`Level up! You reached level ${s.level}`, { duration: 6000 });
         await reload();
       }
       setBusyId(null);
@@ -229,39 +229,21 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
   const guitarClasses = "data" in calendar.state && calendar.state.data ? calendar.state.data.guitarClasses : [];
 
   return (
-    <main className="cyber-grid min-h-screen">
-      <div className="mx-auto grid max-w-7xl gap-4 p-4 md:p-6">
-        <header className="flex flex-wrap items-center gap-3">
-          <Cpu className="size-7 text-cyan-300 drop-shadow-[0_0_6px_currentColor]" />
-          <div className="flex-1">
-            <h1 className="font-display neon-text text-2xl font-black tracking-[0.25em]">CASANITE</h1>
-            <p className="font-mono text-[11px] text-muted-foreground">
-              {WEEKDAY_SHORT[today.weekday].toUpperCase()} {today.isoDate} · {userEmail}
-            </p>
-          </div>
-          <nav className="flex items-center gap-2">
-            <Link href="/character" className={buttonVariants({ variant: "outline", size: "sm", className: "font-mono text-xs" })}>
-              <UserRound /> CHARACTER
-            </Link>
-            <Link href="/body-scan" className={buttonVariants({ variant: "outline", size: "sm", className: "font-mono text-xs" })}>
-              <ScanLine /> BODY SCAN
-            </Link>
-          </nav>
-          <label
-            className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 font-mono text-xs transition-colors ${
-              editMode ? "border-fuchsia-400/70 bg-fuchsia-400/10 text-fuchsia-200" : "border-border text-muted-foreground"
-            }`}
-          >
-            <Settings2 className="size-3.5" />
-            EDIT MODE
-            <Switch checked={editMode} onCheckedChange={setEditMode} aria-label="Toggle edit mode" />
-          </label>
-          <form action="/auth/signout" method="post">
-            <Button type="submit" variant="ghost" size="sm" aria-label="Sign out">
-              <LogOut />
-            </Button>
-          </form>
-        </header>
+    <AppShell
+      title="Dashboard"
+      subtitle={`${WEEKDAY_SHORT[today.weekday]} ${today.isoDate} · ${userEmail}`}
+      actions={
+        <label
+          className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+            editMode ? "border-violet-500/50 bg-violet-500/10 text-violet-600 dark:text-violet-300" : "bg-card text-muted-foreground"
+          }`}
+        >
+          <Settings2 className="size-4" />
+          Edit mode
+          <Switch checked={editMode} onCheckedChange={setEditMode} aria-label="Toggle edit mode" />
+        </label>
+      }
+    >
 
         <GuitarBanner guitarClasses={guitarClasses} />
         <StatsHud stats={stats} questsDone={questsDone} questsTotal={questItems.length} />
@@ -298,7 +280,7 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
                 <FitWidget />
                 <CalendarWidget state={calendar.state} refresh={() => void calendar.refresh()} />
                 <section className="neon-panel p-4">
-                  <h3 className="mb-2 flex items-center gap-1.5 font-display text-sm font-bold tracking-wider text-emerald-300 uppercase">
+                  <h3 className="mb-2 flex items-center gap-1.5 text-sm font-bold text-emerald-600 dark:text-emerald-300">
                     <Salad className="size-4" /> Diet rules
                   </h3>
                   {dietGroups.length === 0 && <p className="text-xs text-muted-foreground">No diet rules.</p>}
@@ -308,7 +290,7 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
                         .filter((i) => i.is_active)
                         .map((i) => (
                           <li key={i.id} className="rounded-md border border-emerald-400/20 bg-emerald-400/5 p-2">
-                            <p className="text-sm font-medium text-emerald-100">{i.title}</p>
+                            <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">{i.title}</p>
                             {i.details && <p className="text-xs">{i.details}</p>}
                             {i.notes && <p className="mt-1 text-[11px] text-muted-foreground">{i.notes}</p>}
                           </li>
@@ -327,7 +309,7 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
                   )}
                 </section>
                 <section className="neon-panel p-4">
-                  <h3 className="mb-2 font-display text-sm font-bold tracking-wider text-fuchsia-300 uppercase">
+                  <h3 className="mb-2 text-sm font-bold text-violet-600 dark:text-violet-300">
                     EXP · last 14 days
                   </h3>
                   <div className="h-28">
@@ -360,8 +342,8 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
               </Button>
             )}
             {!editMode && (
-              <p className="mb-4 font-mono text-xs text-muted-foreground">
-                Turn on EDIT MODE to add, edit, reorder or delete any group, exercise, habit or goal.
+              <p className="mb-4 tabular-nums text-xs text-muted-foreground">
+                Turn on Edit mode to add, edit, reorder or delete any group, exercise, habit or goal.
               </p>
             )}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -402,7 +384,6 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
             <HealthPanel logs={data.healthLogs} onCreate={health.create} onUpdate={health.update} onDelete={health.remove} />
           </TabsContent>
         </Tabs>
-      </div>
 
       <ItemDialog
         open={itemDialog.open}
@@ -418,6 +399,6 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
         group={groupDialog.group}
         onSave={saveGroup}
       />
-    </main>
+    </AppShell>
   );
 }

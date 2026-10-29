@@ -34,12 +34,12 @@ function EventRow({ e, icon }: { e: CalendarEventLite; icon: React.ReactNode }) 
             e.summary
           )}
         </p>
-        <p className="font-mono text-[10px] text-muted-foreground">
+        <p className="tabular-nums text-[10px] text-muted-foreground">
           {formatDay(e)} · {formatEventTime(e.start, e.allDay)}
           {e.location && ` · ${e.location}`}
         </p>
       </div>
-      {soon && <span className="font-mono text-[10px] text-rose-300">SOON</span>}
+      {soon && <span className="tabular-nums text-[10px] text-rose-600 dark:text-rose-300">Soon</span>}
     </li>
   );
 }
@@ -50,7 +50,7 @@ export function CalendarWidget({ state, refresh }: { state: GoogleState<Calendar
   return (
     <section className="neon-panel p-4">
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 font-display text-sm font-bold tracking-wider text-sky-300 uppercase">
+        <h3 className="flex items-center gap-1.5 text-sm font-bold text-sky-600 dark:text-sky-300">
           <CalendarClock className="size-4" /> Calendar
         </h3>
         <Button size="xs" variant="outline" onClick={refresh} disabled={state.status === "loading"}>
@@ -65,19 +65,19 @@ export function CalendarWidget({ state, refresh }: { state: GoogleState<Calendar
       {data && (
         <div className="space-y-3">
           <div>
-            <p className="mb-1 font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Doctor appointments</p>
+            <p className="mb-1 tabular-nums text-[10px] text-muted-foreground">Doctor appointments</p>
             {data.appointments.length === 0 ? (
               <p className="text-xs text-muted-foreground">None in the next 60 days.</p>
             ) : (
               <ul className="space-y-1">
                 {data.appointments.map((e) => (
-                  <EventRow key={e.id} e={e} icon={<Stethoscope className="size-3.5 text-rose-300" />} />
+                  <EventRow key={e.id} e={e} icon={<Stethoscope className="size-3.5 text-rose-600 dark:text-rose-300" />} />
                 ))}
               </ul>
             )}
           </div>
           <div>
-            <p className="mb-1 font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Guitar class (Sat, Tampines)</p>
+            <p className="mb-1 tabular-nums text-[10px] text-muted-foreground">Guitar class (Sat, Tampines)</p>
             {data.guitarClasses.length === 0 ? (
               <p className="text-xs text-muted-foreground">
                 No &quot;guitar&quot; events found — the Saturday reminder still fires before 10:00.
@@ -85,7 +85,7 @@ export function CalendarWidget({ state, refresh }: { state: GoogleState<Calendar
             ) : (
               <ul className="space-y-1">
                 {data.guitarClasses.slice(0, 2).map((e) => (
-                  <EventRow key={e.id} e={e} icon={<Guitar className="size-3.5 text-fuchsia-300" />} />
+                  <EventRow key={e.id} e={e} icon={<Guitar className="size-3.5 text-violet-600 dark:text-violet-300" />} />
                 ))}
               </ul>
             )}

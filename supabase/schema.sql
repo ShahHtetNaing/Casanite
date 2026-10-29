@@ -793,3 +793,53 @@ begin
     execute format('grant execute on function %s to authenticated', f);
   end loop;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- v3: Evolt scans feed the Health weight/BMI log (one linked row per scan).
+-- ---------------------------------------------------------------------------
+alter table public.health_logs
+  add column if not exists evolt_scan_id uuid unique references public.evolt_scans (id) on delete cascade;
+
+-- Scan-owned Health rows: one per scan, never adopts manual logs. Height comes from the
+-- scan report (metrics.height_cm), else the latest logged height, else NULL (no BMI).
+create or replace function public.sync_health_from_scan()
+returns trigger
+language plpgsql
+as $$
+declare
+  v_height numeric;
+begin
+  if new.weight_kg is null then
+    delete from public.health_logs where evolt_scan_id = new.id;
+    return new;
+  end if;
+
+  -- Tolerate AI-written strings like "175 cm"; ignore anything outside the health_logs range.
+  v_height := substring(new.metrics ->> 'height_cm' from '^\s*(\d{2,3}(?:\.\d+)?)')::numeric;
+  if v_height is not null and (v_height < 80 or v_height > 260) then
+    v_height := null;
+  end if;
+
+  if v_height is null then
+    select height_cm into v_height from public.health_logs
+     where user_id = new.user_id and height_cm is not null and evolt_scan_id is null
+     order by logged_at desc limit 1;
+  end if;
+
+  insert into public.health_logs (user_id, logged_at, weight_kg, height_cm, notes, evolt_scan_id)
+  values (new.user_id, new.scanned_at, new.weight_kg, v_height, 'Evolt body scan', new.id)
+  on conflict (evolt_scan_id) do update
+    set weight_kg = excluded.weight_kg,
+        logged_at = excluded.logged_at,
+        height_cm = excluded.height_cm;
+  return new;
+end;
+$$;
+
+drop trigger if exists evolt_scans_sync_health on public.evolt_scans;
+create trigger evolt_scans_sync_health
+  after insert or update of weight_kg, scanned_at, metrics on public.evolt_scans
+  for each row execute function public.sync_health_from_scan();
+
+-- Backfill existing scans (idempotent: upserts the same scan-owned rows).
+update public.evolt_scans set weight_kg = weight_kg where weight_kg is not null;

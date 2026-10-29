@@ -187,33 +187,33 @@ export function BodyScan({
   const approved = suggestions.filter((s) => s.status === "approved");
 
   return (
-    <PageShell title="BODY SCAN" subtitle="Evolt 360 reports · private storage · Gemini analysis">
+    <PageShell title="Body Scan" subtitle="Evolt 360 reports · private storage · AI analysis">
       <div className="grid gap-4 md:grid-cols-4">
-        <Metric label="WEIGHT" value={latest ? `${lb(latest.weight_kg)} lb` : "—"} sub={latest?.weight_kg ? `${latest.weight_kg} kg` : undefined} />
-        <Metric label="GOAL" value={`${GOAL_LB[0]}–${GOAL_LB[1]} lb`} sub={latest?.weight_kg ? goalDelta(lb(latest.weight_kg)!) : undefined} />
-        <Metric label="SKELETAL MUSCLE" value={latest?.skeletal_muscle_kg ? `${latest.skeletal_muscle_kg} kg` : "—"} />
-        <Metric label="BODY FAT" value={latest?.body_fat_pct ? `${latest.body_fat_pct}%` : "—"} sub={latest?.bwi_score ? `BWI ${latest.bwi_score}` : undefined} />
+        <Metric label="Weight" value={latest ? `${lb(latest.weight_kg)} lb` : "—"} sub={latest?.weight_kg ? `${latest.weight_kg} kg` : undefined} />
+        <Metric label="Goal" value={`${GOAL_LB[0]}–${GOAL_LB[1]} lb`} sub={latest?.weight_kg ? goalDelta(lb(latest.weight_kg)!) : undefined} />
+        <Metric label="Skeletal muscle" value={latest?.skeletal_muscle_kg ? `${latest.skeletal_muscle_kg} kg` : "—"} />
+        <Metric label="Body fat" value={latest?.body_fat_pct ? `${latest.body_fat_pct}%` : "—"} sub={latest?.bwi_score ? `BWI ${latest.bwi_score}` : undefined} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle className="font-mono text-sm tracking-widest text-cyan-300">PROGRESS</CardTitle>
+            <CardTitle className="tabular-nums text-sm text-blue-600 dark:text-blue-300">Progress</CardTitle>
           </CardHeader>
           <CardContent className="h-64">
             {chartData.length ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                   <YAxis yAxisId="lb" tick={{ fontSize: 11 }} domain={["dataMin - 10", "dataMax + 5"]} />
                   <YAxis yAxisId="pct" orientation="right" tick={{ fontSize: 11 }} domain={[0, 30]} />
-                  <ReferenceArea yAxisId="lb" y1={GOAL_LB[0]} y2={GOAL_LB[1]} fill="#22d3ee" fillOpacity={0.08} />
-                  <Tooltip contentStyle={{ background: "#0b0f1a", border: "1px solid #334155" }} />
+                  <ReferenceArea yAxisId="lb" y1={GOAL_LB[0]} y2={GOAL_LB[1]} fill="var(--chart-1)" fillOpacity={0.08} />
+                  <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }} />
                   <Legend />
-                  <Line yAxisId="lb" dataKey="weight" name="Weight (lb)" stroke="#22d3ee" strokeWidth={2} />
-                  <Line yAxisId="lb" dataKey="muscle" name="Skeletal muscle (lb)" stroke="#e879f9" strokeWidth={2} />
-                  <Line yAxisId="pct" dataKey="fat" name="Body fat %" stroke="#fbbf24" strokeWidth={2} />
+                  <Line yAxisId="lb" dataKey="weight" name="Weight (lb)" stroke="var(--chart-1)" strokeWidth={2} />
+                  <Line yAxisId="lb" dataKey="muscle" name="Skeletal muscle (lb)" stroke="var(--chart-2)" strokeWidth={2} />
+                  <Line yAxisId="pct" dataKey="fat" name="Body fat %" stroke="var(--chart-4)" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -227,7 +227,7 @@ export function BodyScan({
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="font-mono text-sm tracking-widest text-cyan-300">SCAN HISTORY</CardTitle>
+          <CardTitle className="tabular-nums text-sm text-blue-600 dark:text-blue-300">Scan history</CardTitle>
           <Button size="sm" variant="outline" onClick={() => setEditing({ scanned_at: new Date().toISOString() })}>
             <Plus /> Manual entry
           </Button>
@@ -237,17 +237,17 @@ export function BodyScan({
             <div
               key={s.id}
               className={`flex flex-wrap items-center gap-3 rounded-lg border p-2.5 ${
-                s.id === selectedId ? "border-cyan-400/60 bg-cyan-400/5" : "border-border/60"
+                s.id === selectedId ? "border-primary/50 bg-primary/5" : "border-border/60"
               }`}
             >
               <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setSelectedId(s.id)}>
                 <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
                   {fmtDate(s.scanned_at)}
                   {s.notes && <span className="text-xs text-muted-foreground">· {s.notes}</span>}
-                  {s.analysis && <Badge variant="outline" className="font-mono text-[10px] text-fuchsia-300">ANALYZED</Badge>}
-                  {!s.pdf_path && <Badge variant="outline" className="font-mono text-[10px] text-amber-300">NO PDF</Badge>}
+                  {s.analysis && <Badge variant="outline" className="tabular-nums text-[10px] text-violet-600 dark:text-violet-300">Analyzed</Badge>}
+                  {!s.pdf_path && <Badge variant="outline" className="tabular-nums text-[10px] text-amber-600 dark:text-amber-300">No PDF</Badge>}
                 </div>
-                <div className="font-mono text-xs text-muted-foreground">
+                <div className="tabular-nums text-xs text-muted-foreground">
                   {[
                     s.weight_kg && `${s.weight_kg} kg (${lb(s.weight_kg)} lb)`,
                     s.body_fat_pct && `BF ${s.body_fat_pct}%`,
@@ -285,7 +285,7 @@ export function BodyScan({
                   <Pencil />
                 </Button>
                 <Button size="icon-sm" variant="ghost" aria-label="Delete scan" onClick={() => deleteScan(s)}>
-                  <Trash2 className="text-rose-400" />
+                  <Trash2 className="text-rose-500" />
                 </Button>
               </div>
             </div>
@@ -296,14 +296,14 @@ export function BodyScan({
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="neon-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-mono text-sm tracking-widest text-fuchsia-300">
-              <Bot className="size-4" /> AI ANALYSIS {selected && <span className="text-muted-foreground">· {fmtDate(selected.scanned_at)}</span>}
+            <CardTitle className="flex items-center gap-2 tabular-nums text-sm text-violet-600 dark:text-violet-300">
+              <Bot className="size-4" /> AI analysis {selected && <span className="text-muted-foreground">· {fmtDate(selected.scanned_at)}</span>}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 text-sm">
             {!selected?.analysis ? (
               <p className="text-xs text-muted-foreground">
-                Select a scan and click Analyze. Gemini reads the PDF, summarises your body composition and suggests exercises for
+                Select a scan and click Analyze. The AI reads the PDF, summarises your body composition and suggests exercises for
                 145–150 lb and calisthenics/flip strength.
               </p>
             ) : (
@@ -312,7 +312,7 @@ export function BodyScan({
                 <AiList title="Strengths" items={selected.analysis.strengths} />
                 <AiList title="Areas to improve" items={selected.analysis.improvements} />
                 <div>
-                  <div className="mb-1 font-mono text-[11px] tracking-widest text-cyan-300">GOAL PLAN</div>
+                  <div className="mb-1 tabular-nums text-[11px] text-blue-600 dark:text-blue-300">Goal plan</div>
                   <p className="text-xs text-muted-foreground">{selected.analysis.goal_plan}</p>
                 </div>
               </>
@@ -322,7 +322,7 @@ export function BodyScan({
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-mono text-sm tracking-widest text-emerald-300">SUGGESTED EXERCISES</CardTitle>
+            <CardTitle className="tabular-nums text-sm text-emerald-600 dark:text-emerald-300">Suggested exercises</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2">
             {pending.length === 0 && (
@@ -340,11 +340,11 @@ export function BodyScan({
             ))}
             {approved.length > 0 && (
               <div className="mt-2 border-t border-border/60 pt-2">
-                <div className="mb-1 font-mono text-[11px] tracking-widest text-muted-foreground">APPROVED · edit them in Edit Mode on the dashboard</div>
+                <div className="mb-1 tabular-nums text-[11px] text-muted-foreground">Approved · edit them in Edit Mode on the dashboard</div>
                 <ul className="space-y-1 text-xs">
                   {approved.map((s) => (
                     <li key={s.id} className="flex items-center gap-2">
-                      <Check className="size-3 text-emerald-300" /> {s.title}
+                      <Check className="size-3 text-emerald-600 dark:text-emerald-300" /> {s.title}
                       {!s.approved_item_id && <span className="text-muted-foreground">(removed from routine)</span>}
                     </li>
                   ))}
@@ -373,9 +373,9 @@ function Metric({ label, value, sub }: { label: string; value: string; sub?: str
   return (
     <Card className="neon-border">
       <CardContent className="py-3">
-        <div className="font-mono text-[10px] tracking-widest text-muted-foreground">{label}</div>
-        <div className="font-display text-xl font-bold text-cyan-200">{value}</div>
-        {sub && <div className="font-mono text-[11px] text-muted-foreground">{sub}</div>}
+        <div className="tabular-nums text-[10px] text-muted-foreground">{label}</div>
+        <div className="text-xl font-bold text-blue-600 dark:text-blue-300">{value}</div>
+        {sub && <div className="tabular-nums text-[11px] text-muted-foreground">{sub}</div>}
       </CardContent>
     </Card>
   );
@@ -387,8 +387,8 @@ function UploadCard({ busy, onUpload }: { busy: boolean; onUpload: (file: File, 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-mono text-sm tracking-widest text-cyan-300">
-          <Upload className="size-4" /> UPLOAD EVOLT PDF
+        <CardTitle className="flex items-center gap-2 tabular-nums text-sm text-blue-600 dark:text-blue-300">
+          <Upload className="size-4" /> Upload Evolt PDF
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -438,7 +438,7 @@ function SuggestionRow({
     <div className="grid gap-2 rounded-lg border border-border/60 p-2.5">
       <div>
         <div className="text-sm font-medium">
-          {s.title} {s.details && <span className="font-mono text-xs text-cyan-300">· {s.details}</span>}
+          {s.title} {s.details && <span className="tabular-nums text-xs text-blue-600 dark:text-blue-300">· {s.details}</span>}
         </div>
         {s.rationale && <p className="text-xs text-muted-foreground">{s.rationale}</p>}
       </div>
@@ -465,7 +465,7 @@ function AiList({ title, items }: { title: string; items: string[] }) {
   if (!items?.length) return null;
   return (
     <div>
-      <div className="mb-1 font-mono text-[11px] tracking-widest text-cyan-300">{title.toUpperCase()}</div>
+      <div className="mb-1 tabular-nums text-[11px] text-blue-600 dark:text-blue-300">{title.toUpperCase()}</div>
       <ul className="list-disc space-y-0.5 pl-5 text-xs text-muted-foreground">
         {items.map((t, i) => (
           <li key={i}>{t}</li>

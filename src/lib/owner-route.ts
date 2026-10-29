@@ -2,7 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isOwnerEmail } from "@/lib/config";
-import { GeminiNotConfiguredError } from "@/lib/gemini";
+import { AiNotConfiguredError } from "@/lib/ai";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -16,8 +16,8 @@ export async function ownerRoute(fn: (supabase: Supabase, userId: string) => Pro
   try {
     return NextResponse.json(await fn(supabase, user.id));
   } catch (err) {
-    if (err instanceof GeminiNotConfiguredError) {
-      return NextResponse.json({ error: "gemini_not_configured", message: err.message }, { status: 409 });
+    if (err instanceof AiNotConfiguredError) {
+      return NextResponse.json({ error: "ai_not_configured", message: err.message }, { status: 409 });
     }
     const message = err instanceof Error ? err.message : "Request failed";
     console.error("[api]", message);
