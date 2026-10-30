@@ -776,6 +776,7 @@ begin
   if not exists (select 1 from public.evolt_scans where user_id = auth.uid()) then
     perform public.seed_evolt_baseline();
   end if;
+  perform public.seed_nutrition();
 end;
 $$;
 
@@ -945,3 +946,146 @@ as $$
 $$;
 revoke all on function public.stats_as_of(uuid, date) from public, anon;
 grant execute on function public.stats_as_of(uuid, date) to authenticated, service_role;
+
+-- =====================================================================
+-- v6: Mind & Words (daily AI quote/word + saved ones) and Meals
+--     (flexible meal log, insulin, supplements). Safe to re-run.
+-- =====================================================================
+create table if not exists public.daily_mind (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  day         date not null default public.app_today(),
+  quote       jsonb,
+  word        jsonb,
+  updated_at  timestamptz not null default now(),
+  unique (user_id, day)
+);
+
+create table if not exists public.saved_quotes (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  quote       text not null check (length(btrim(quote)) between 1 and 2000),
+  author      text check (length(author) <= 200),
+  breakdown   text check (length(breakdown) <= 4000),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create table if not exists public.saved_words (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  word            text not null check (length(btrim(word)) between 1 and 100),
+  part_of_speech  text check (length(part_of_speech) <= 50),
+  definition      text check (length(definition) <= 2000),
+  synonyms        text[] not null default '{}',
+  examples        text[] not null default '{}',
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+create table if not exists public.meal_logs (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  day           date not null default public.app_today(),
+  meal          text not null check (meal in ('breakfast', 'lunch', 'dinner', 'snack')),
+  description   text not null check (length(btrim(description)) between 1 and 500),
+  protein_g     numeric(6, 1) check (protein_g between 0 and 1000),
+  carbs_g       numeric(6, 1) check (carbs_g between 0 and 1000),
+  veg_servings  numeric(4, 1) check (veg_servings between 0 and 50),
+  with_milk     boolean not null default false,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+create index if not exists meal_logs_user_day on public.meal_logs (user_id, day);
+
+create table if not exists public.insulin_logs (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  day         date not null default public.app_today(),
+  taken_at    timestamptz not null default now(),
+  kind        text not null check (kind in ('lantus', 'prandial')),
+  units       numeric(5, 1) not null check (units > 0 and units <= 100),
+  meal        text check (meal in ('breakfast', 'lunch', 'dinner', 'snack')),
+  created_at  timestamptz not null default now()
+);
+create index if not exists insulin_logs_user_day on public.insulin_logs (user_id, day);
+-- Lantus is once a day.
+create unique index if not exists insulin_logs_one_lantus on public.insulin_logs (user_id, day) where kind = 'lantus';
+
+create table if not exists public.supplements (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name        text not null check (length(btrim(name)) between 1 and 120),
+  dose        text check (length(dose) <= 120),
+  sort_order  integer not null default 0,
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists public.supplement_logs (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  supplement_id  uuid not null references public.supplements (id) on delete cascade,
+  day            date not null default public.app_today(),
+  created_at     timestamptz not null default now(),
+  unique (user_id, supplement_id, day)
+);
+
+create table if not exists public.nutrition_settings (
+  user_id           uuid primary key default auth.uid() references auth.users (id) on delete cascade,
+  lantus_units      numeric(5, 1) not null default 24 check (lantus_units > 0 and lantus_units <= 100),
+  prandial_units    numeric(5, 1) not null default 10 check (prandial_units > 0 and prandial_units <= 100),
+  goal_lbs_min      numeric(5, 1) not null default 145 check (goal_lbs_min between 50 and 900),
+  goal_lbs_max      numeric(5, 1) not null default 150 check (goal_lbs_max between 50 and 900),
+  protein_g_target  numeric(6, 1) not null default 120 check (protein_g_target between 0 and 1000),
+  carbs_g_target    numeric(6, 1) not null default 150 check (carbs_g_target between 0 and 1000),
+  veg_target        numeric(4, 1) not null default 5 check (veg_target between 0 and 50),
+  updated_at        timestamptz not null default now(),
+  check (goal_lbs_min <= goal_lbs_max)
+);
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['daily_mind', 'saved_quotes', 'saved_words', 'meal_logs', 'nutrition_settings']
+  loop
+    execute format('drop trigger if exists %I on public.%I', t || '_touch', t);
+    execute format('create trigger %I before update on public.%I
+                      for each row execute function public.touch_updated_at()', t || '_touch', t);
+  end loop;
+  foreach t in array array['daily_mind', 'saved_quotes', 'saved_words', 'meal_logs', 'insulin_logs',
+                           'supplements', 'supplement_logs', 'nutrition_settings']
+  loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('alter table public.%I force row level security', t);
+    execute format('revoke all on public.%I from anon', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+    execute format('drop policy if exists owner_only on public.%I', t);
+    execute format(
+      'create policy owner_only on public.%I for all to authenticated
+         using (user_id = auth.uid() and public.is_owner())
+         with check (user_id = auth.uid() and public.is_owner())', t);
+  end loop;
+end $$;
+
+-- First run only: default insulin/targets and the current supplements.
+-- The settings row doubles as the "already seeded" marker, so deleted supplements stay deleted.
+create or replace function public.seed_nutrition()
+returns void
+language plpgsql
+as $$
+begin
+  if not public.is_owner() then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+  if exists (select 1 from public.nutrition_settings where user_id = auth.uid()) then
+    return;
+  end if;
+  insert into public.nutrition_settings (user_id) values (auth.uid());
+  insert into public.supplements (name, dose, sort_order) values
+    ('Fish Oil', null, 1),
+    ('Enervon-C', null, 2);
+end;
+$$;
+revoke all on function public.seed_nutrition() from public, anon;
+grant execute on function public.seed_nutrition() to authenticated;

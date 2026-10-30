@@ -5,8 +5,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { BookOpen, LayoutDashboard, ListTodo, LogOut, Moon, ScanLine, ShoppingCart, Sun, UserRound } from "lucide-react";
+import {
+  BookOpen,
+  Brain,
+  LayoutDashboard,
+  ListTodo,
+  LogOut,
+  Moon,
+  ScanLine,
+  ShoppingCart,
+  Sun,
+  UserRound,
+  UtensilsCrossed,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RestTimer } from "@/components/rest-timer";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -15,6 +28,8 @@ const NAV = [
   { href: "/body-scan", label: "Body Scan", icon: ScanLine },
   { href: "/tasks", label: "Daily Tasks", icon: ListTodo },
   { href: "/shopping", label: "Things to Buy", icon: ShoppingCart },
+  { href: "/mind", label: "Mind & Words", icon: Brain },
+  { href: "/meals", label: "Meals", icon: UtensilsCrossed },
   { href: "/journal", label: "Journal", icon: BookOpen },
 ];
 
@@ -133,7 +148,7 @@ export function AppShell({
           ))}
         </nav>
 
-        <main className="mx-auto grid max-w-7xl gap-5 p-4 md:p-8">
+        <main className="mx-auto grid max-w-7xl gap-5 p-4 pb-20 md:p-8 md:pb-20">
           <header className="flex flex-wrap items-end gap-3">
             <div className="flex-1">
               <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
@@ -144,6 +159,7 @@ export function AppShell({
           {children}
         </main>
       </div>
+      <RestTimer />
     </div>
   );
 }
