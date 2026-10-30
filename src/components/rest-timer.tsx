@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, Minus, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,9 @@ const PRESETS = [30, 60, 90, 120, 180];
 type TimerState = { duration: number; remainingMs: number; endsAt: number | null; open: boolean };
 const INITIAL: TimerState = { duration: 90, remainingMs: 90_000, endsAt: null, open: false };
 
+// Module-level so the unlocked AudioContext survives client-side navigation (each page mounts its own RestTimer).
+let sharedAudio: AudioContext | null = null;
+
 function fmt(ms: number) {
   const s = Math.max(0, Math.ceil(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -22,7 +25,6 @@ export function RestTimer() {
   const [state, setState] = useState<TimerState>(INITIAL);
   const [now, setNow] = useState(() => Date.now());
   const [loaded, setLoaded] = useState(false);
-  const audio = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     try {
@@ -41,7 +43,7 @@ export function RestTimer() {
 
   const beep = useCallback(() => {
     navigator.vibrate?.([200, 100, 200]);
-    const ctx = audio.current;
+    const ctx = sharedAudio;
     if (!ctx) return;
     void ctx.resume();
     [0, 0.35, 0.7].forEach((offset) => {
@@ -75,8 +77,8 @@ export function RestTimer() {
   const pct = state.duration ? Math.min(100, (remaining / (state.duration * 1000)) * 100) : 0;
 
   function unlockAudio() {
-    if (!audio.current && typeof window !== "undefined" && "AudioContext" in window) audio.current = new AudioContext();
-    void audio.current?.resume();
+    if (!sharedAudio && typeof window !== "undefined" && "AudioContext" in window) sharedAudio = new AudioContext();
+    void sharedAudio?.resume();
   }
 
   function start() {

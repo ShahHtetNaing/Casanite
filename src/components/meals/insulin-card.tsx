@@ -29,6 +29,13 @@ export function InsulinCard({ day, today, initialLogs, settings }: Props) {
   const [lantusTime, setLantusTime] = useState(defaultTime);
   const [mealUnits, setMealUnits] = useState(String(settings.prandial_units));
   const [mealTime, setMealTime] = useState(defaultTime);
+  const [prevDefaults, setPrevDefaults] = useState({ lantus: settings.lantus_units, prandial: settings.prandial_units });
+  if (prevDefaults.lantus !== settings.lantus_units || prevDefaults.prandial !== settings.prandial_units) {
+    // Saved Targets changed the defaults: follow them unless the field was edited by hand.
+    if (lantusUnits === String(prevDefaults.lantus)) setLantusUnits(String(settings.lantus_units));
+    if (mealUnits === String(prevDefaults.prandial)) setMealUnits(String(settings.prandial_units));
+    setPrevDefaults({ lantus: settings.lantus_units, prandial: settings.prandial_units });
+  }
   const [meal, setMeal] = useState<MealSlot>(day === today ? currentMeal() : "lunch");
   const [editing, setEditing] = useState<string | null>(null);
   const [editUnits, setEditUnits] = useState("");
