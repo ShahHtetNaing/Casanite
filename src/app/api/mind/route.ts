@@ -82,8 +82,8 @@ export async function POST(req: Request) {
     const out = await chatJson<{ quote?: unknown; word?: unknown }>(SYSTEM, user, shape);
     const next: DailyMind = {
       day,
-      quote: needQuote ? normQuote(out.quote) ?? current.quote : current.quote,
-      word: needWord ? normWord(out.word) ?? current.word : current.word,
+      quote: needQuote ? normQuote(out.quote) : current.quote,
+      word: needWord ? normWord(out.word) : current.word,
     };
     if ((needQuote && !next.quote) || (needWord && !next.word)) throw new Error("AI returned an incomplete card. Try again.");
 
