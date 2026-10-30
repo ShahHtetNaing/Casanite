@@ -176,7 +176,7 @@ export function RestTimer() {
               state.duration === p ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent",
             )}
           >
-            {p < 60 ? `${p}s` : `${p / 60}${p % 60 ? `:${p % 60}` : ""}m`}
+            {p < 60 ? `${p}s` : p % 60 ? `${Math.floor(p / 60)}:${String(p % 60).padStart(2, "0")}` : `${p / 60}m`}
           </button>
         ))}
       </div>

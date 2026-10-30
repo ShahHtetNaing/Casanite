@@ -360,7 +360,7 @@ function MealForm({
         </div>
       )}
       <div className="grid gap-2 sm:grid-cols-[8rem_1fr]">
-        <select className={selectClass} value={meal} onChange={(e) => setMeal(e.target.value as MealSlot)} aria-label="Meal">
+        <select className={`${selectClass} w-full`} value={meal} onChange={(e) => setMeal(e.target.value as MealSlot)} aria-label="Meal">
           {MEAL_SLOTS.map((m) => (
             <option key={m} value={m}>
               {MEAL_LABEL[m]}

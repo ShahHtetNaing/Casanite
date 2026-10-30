@@ -10,7 +10,7 @@ export const MEAL_LABEL: Record<MealSlot, string> = {
 };
 
 export const selectClass =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 [&>option]:bg-popover";
+  "h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 [&>option]:bg-popover";
 
 /** Blank → null, invalid/negative → NaN (caller rejects), else the number. */
 export function toNum(s: string): number | null {
