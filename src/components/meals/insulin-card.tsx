@@ -25,17 +25,13 @@ export function InsulinCard({ day, today, initialLogs, settings }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const [logs, setLogs] = useState(initialLogs);
   const defaultTime = day === today ? nowTime() : "12:00";
-  const [lantusUnits, setLantusUnits] = useState(String(settings.lantus_units));
+  // null = not typed by hand, so the input follows the saved Targets default.
+  const [lantusTyped, setLantusTyped] = useState<string | null>(null);
+  const lantusUnits = lantusTyped ?? String(settings.lantus_units);
   const [lantusTime, setLantusTime] = useState(defaultTime);
-  const [mealUnits, setMealUnits] = useState(String(settings.prandial_units));
+  const [mealTyped, setMealTyped] = useState<string | null>(null);
+  const mealUnits = mealTyped ?? String(settings.prandial_units);
   const [mealTime, setMealTime] = useState(defaultTime);
-  const [prevDefaults, setPrevDefaults] = useState({ lantus: settings.lantus_units, prandial: settings.prandial_units });
-  if (prevDefaults.lantus !== settings.lantus_units || prevDefaults.prandial !== settings.prandial_units) {
-    // Saved Targets changed the defaults: follow them unless the field was edited by hand.
-    if (lantusUnits === String(prevDefaults.lantus)) setLantusUnits(String(settings.lantus_units));
-    if (mealUnits === String(prevDefaults.prandial)) setMealUnits(String(settings.prandial_units));
-    setPrevDefaults({ lantus: settings.lantus_units, prandial: settings.prandial_units });
-  }
   const [meal, setMeal] = useState<MealSlot>(day === today ? currentMeal() : "lunch");
   const [editing, setEditing] = useState<string | null>(null);
   const [editUnits, setEditUnits] = useState("");
@@ -132,7 +128,7 @@ export function InsulinCard({ day, today, initialLogs, settings }: Props) {
             row(lantus, "Lantus")
           ) : (
             <div className="flex flex-wrap items-center gap-2">
-              <Input type="number" step="0.5" value={lantusUnits} onChange={(e) => setLantusUnits(e.target.value)} aria-label="Lantus units" className="w-20" />
+              <Input type="number" step="0.5" value={lantusUnits} onChange={(e) => setLantusTyped(e.target.value)} aria-label="Lantus units" className="w-20" />
               <span className="text-sm text-muted-foreground">u</span>
               <Input type="time" value={lantusTime} onChange={(e) => setLantusTime(e.target.value)} aria-label="Lantus time" className="w-28" />
               <Button size="sm" onClick={() => add("lantus", lantusUnits, lantusTime, null)}>
@@ -148,7 +144,7 @@ export function InsulinCard({ day, today, initialLogs, settings }: Props) {
           </p>
           {prandial.map((l) => row(l, l.meal ? MEAL_LABEL[l.meal] : "Meal"))}
           <div className="flex flex-wrap items-center gap-2">
-            <Input type="number" step="0.5" value={mealUnits} onChange={(e) => setMealUnits(e.target.value)} aria-label="Meal-time units" className="w-20" />
+            <Input type="number" step="0.5" value={mealUnits} onChange={(e) => setMealTyped(e.target.value)} aria-label="Meal-time units" className="w-20" />
             <span className="text-sm text-muted-foreground">u</span>
             <select className={`${selectClass} w-28`} value={meal} onChange={(e) => setMeal(e.target.value as MealSlot)} aria-label="Meal">
               {MEAL_SLOTS.map((m) => (
