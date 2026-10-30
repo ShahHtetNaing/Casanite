@@ -248,3 +248,89 @@ export interface DietLog {
   day: string;
   followed: boolean;
 }
+
+export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack";
+export const MEAL_SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
+
+export interface MealLog {
+  id: string;
+  day: string;
+  meal: MealSlot;
+  description: string;
+  protein_g: number | null;
+  carbs_g: number | null;
+  veg_servings: number | null;
+  with_milk: boolean;
+  created_at: string;
+}
+
+export interface InsulinLog {
+  id: string;
+  day: string;
+  taken_at: string;
+  kind: "lantus" | "prandial";
+  units: number;
+  meal: MealSlot | null;
+}
+
+export interface Supplement {
+  id: string;
+  name: string;
+  dose: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface SupplementLog {
+  id: string;
+  supplement_id: string;
+  day: string;
+}
+
+export interface NutritionSettings {
+  lantus_units: number;
+  prandial_units: number;
+  goal_lbs_min: number;
+  goal_lbs_max: number;
+  protein_g_target: number;
+  carbs_g_target: number;
+  veg_target: number;
+}
+
+export interface DailyQuote {
+  quote: string;
+  author: string | null;
+  breakdown: string;
+}
+
+export interface DailyWord {
+  word: string;
+  part_of_speech: string;
+  definition: string;
+  synonyms: string[];
+  examples: string[];
+}
+
+export interface DailyMind {
+  day: string;
+  quote: DailyQuote | null;
+  word: DailyWord | null;
+}
+
+export interface SavedQuote {
+  id: string;
+  quote: string;
+  author: string | null;
+  breakdown: string | null;
+  created_at: string;
+}
+
+export interface SavedWord {
+  id: string;
+  word: string;
+  part_of_speech: string | null;
+  definition: string | null;
+  synonyms: string[];
+  examples: string[];
+  created_at: string;
+}
