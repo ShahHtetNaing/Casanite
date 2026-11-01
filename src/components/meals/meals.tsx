@@ -61,12 +61,14 @@ export function Meals(props: Props) {
     { protein: 0, carbs: 0, veg: 0, kcal: 0 },
   );
 
+  // Photo scans may name foods (e.g. "orange") that the short description leaves out.
+  const withItems = (m: MealLog) => [m.description, ...(m.items ?? []).map((i) => i.name)].join(", ");
+
   // Rules apply per sitting: everything logged under one meal slot counts as eaten together.
   function slotWarnings(slot: MealSlot, list: MealLog[], extra?: { description: string; with_milk: boolean }, skipId?: string) {
     const entries = list.filter((m) => m.meal === slot && m.id !== skipId);
-    // Photo scans may name foods (e.g. "orange") that the short description leaves out.
     const texts = [
-      ...entries.map((m) => [m.description, ...(m.items ?? []).map((i) => i.name)].join(", ")),
+      ...entries.map(withItems),
       ...(extra ? [extra.description] : []),
     ];
     if (!texts.some((t) => t.trim())) return [];
@@ -188,7 +190,9 @@ export function Meals(props: Props) {
                     <MealForm
                       key={m.id}
                       initial={m}
-                      warningsFor={(v) => slotWarnings(v.meal, meals, v, m.id)}
+                      warningsFor={(v) =>
+                        slotWarnings(v.meal, meals, { ...v, description: v.description.trim() === m.description ? withItems(m) : v.description }, m.id)
+                      }
                       onSubmit={(v) => updateMeal(m.id, v)}
                       onCancel={() => setEditing(null)}
                     />
