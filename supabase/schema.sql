@@ -371,44 +371,44 @@ begin
   -- 1. Morning Flexibility & Flip Prep (daily)
   g := public._seed_group('Morning Flexibility & Flip Prep', 'Daily mobility before anything else.',
                           'exercise', 'daily', null, 'cyan', 10);
-  perform public._seed_item(g, 1, 'Puppy Pose (Thoracic Extension)', '2x45s', 'https://www.youtube.com/watch?v=tR2UYHTTv5U');
-  perform public._seed_item(g, 2, 'Doorframe Lat Stretch', '2x30s/side', 'https://www.youtube.com/watch?v=8b5n4wR_uEQ');
-  perform public._seed_item(g, 3, 'Kneeling Wrist Flexion', '2x45s', 'https://www.youtube.com/watch?v=5OWbZ9Oxz0E');
-  perform public._seed_item(g, 4, 'Kneeling Hip Flexor Lunge', '2x45s/side', 'https://www.youtube.com/watch?v=2PNT-FFKLgY');
-  perform public._seed_item(g, 5, 'Seated Hamstring Fold', '2x45s', 'https://www.youtube.com/watch?v=kYv_8wZzG9E');
-  perform public._seed_item(g, 6, 'Butterfly Stretch', '2x45s', 'https://www.youtube.com/watch?v=4yO3Jk5U3X4');
+  perform public._seed_item(g, 1, 'Puppy Pose (Thoracic Extension)', '2x45s');
+  perform public._seed_item(g, 2, 'Doorframe Lat Stretch', '2x30s/side');
+  perform public._seed_item(g, 3, 'Kneeling Wrist Flexion', '2x45s');
+  perform public._seed_item(g, 4, 'Kneeling Hip Flexor Lunge', '2x45s/side');
+  perform public._seed_item(g, 5, 'Seated Hamstring Fold', '2x45s');
+  perform public._seed_item(g, 6, 'Butterfly Stretch', '2x45s');
 
   -- 2. 7-day rotating gym schedule
   g := public._seed_group('Push & Chest', 'Monday & Friday', 'exercise', 'daily', '{1,5}', 'fuchsia', 20);
-  perform public._seed_item(g, 1, 'Incline Push-Ups', '4x8-10', 'https://www.youtube.com/watch?v=NEdo_I3OuVk');
-  perform public._seed_item(g, 2, 'Seated DB Shoulder Press', '3x8-10', 'https://www.youtube.com/watch?v=qEwKCR5JCog');
+  perform public._seed_item(g, 1, 'Incline Push-Ups', '4x8-10');
+  perform public._seed_item(g, 2, 'Seated DB Shoulder Press', '3x8-10');
   perform public._seed_item(g, 3, 'Flat DB Bench Press', '3x8-10');
-  perform public._seed_item(g, 4, 'Cable Lateral Raises', '3x12', 'https://www.youtube.com/watch?v=f_OGBg2KxgY');
-  perform public._seed_item(g, 5, 'Rope Tricep Pushdowns', '3x12', 'https://www.youtube.com/watch?v=1FjkhpZsaxc');
-  perform public._seed_item(g, 6, 'Hanging Knee Raises', '3x10-12', 'https://www.youtube.com/watch?v=X-ACS9vpRyU');
+  perform public._seed_item(g, 4, 'Cable Lateral Raises', '3x12');
+  perform public._seed_item(g, 5, 'Rope Tricep Pushdowns', '3x12');
+  perform public._seed_item(g, 6, 'Hanging Knee Raises', '3x10-12');
 
   g := public._seed_group('Pull & Back', 'Tuesday & Saturday', 'exercise', 'daily', '{2,6}', 'violet', 30);
-  perform public._seed_item(g, 1, 'Assisted Pull-Up', '4x8-10', 'https://www.youtube.com/watch?v=gx0RWT7WbmA');
-  perform public._seed_item(g, 2, 'Single-Arm DB Rows', '3x8-10/side', 'https://www.youtube.com/watch?v=pYcpY20QaE8');
-  perform public._seed_item(g, 3, 'Inverted Rows', '3x10', 'https://www.youtube.com/watch?v=hXTc1mDnZCw');
-  perform public._seed_item(g, 4, 'Incline DB Curls', '3x10-12', 'https://www.youtube.com/watch?v=soxrZlIl35U');
+  perform public._seed_item(g, 1, 'Assisted Pull-Up', '4x8-10');
+  perform public._seed_item(g, 2, 'Single-Arm DB Rows', '3x8-10/side');
+  perform public._seed_item(g, 3, 'Inverted Rows', '3x10');
+  perform public._seed_item(g, 4, 'Incline DB Curls', '3x10-12');
   perform public._seed_item(g, 5, 'DB Hammer Curls', '3x10-12');
-  perform public._seed_item(g, 6, 'Face Pulls', '3x12-15', 'https://www.youtube.com/watch?v=sHSY0Ao8QHs');
+  perform public._seed_item(g, 6, 'Face Pulls', '3x12-15');
 
   g := public._seed_group('Legs & Flips', 'Wednesday', 'exercise', 'daily', '{3}', 'lime', 40);
-  perform public._seed_item(g, 1, 'Assisted Box Tuck Jumps', '4x5', 'https://www.youtube.com/watch?v=HJZh-12p6vg');
-  perform public._seed_item(g, 2, 'DB Goblet Squats/Leg Press', '3x10-12', 'https://www.youtube.com/watch?v=lRYBbchqxtI');
-  perform public._seed_item(g, 3, 'DB Walking Lunges', '3x10/leg', 'https://www.youtube.com/watch?v=D7KaRcUTQeE');
+  perform public._seed_item(g, 1, 'Assisted Box Tuck Jumps', '4x5');
+  perform public._seed_item(g, 2, 'DB Goblet Squats/Leg Press', '3x10-12');
+  perform public._seed_item(g, 3, 'DB Walking Lunges', '3x10/leg');
   perform public._seed_item(g, 4, 'Seated Leg Curls', '3x12');
   perform public._seed_item(g, 5, 'Standing Machine Calf Raises', '3x15');
-  perform public._seed_item(g, 6, 'Hollow Body Holds', '4x25s', 'https://www.youtube.com/watch?v=NtfYZt4vlrI');
-  perform public._seed_item(g, 7, 'Stomach Vacuums', '4x25s', 'https://www.youtube.com/watch?v=cub3xhJXsAA');
+  perform public._seed_item(g, 6, 'Hollow Body Holds', '4x25s');
+  perform public._seed_item(g, 7, 'Stomach Vacuums', '4x25s');
 
   g := public._seed_group('Cardio & Abs', 'Thursday', 'exercise', 'daily', '{4}', 'amber', 50);
   perform public._seed_item(g, 1, 'StairMaster & Elliptical', 'StairMaster 20-30m + Elliptical 20-30m');
-  perform public._seed_item(g, 2, 'Forearm Plank', '3x30-45s', 'https://www.youtube.com/watch?v=ASdvN_XEl_c');
-  perform public._seed_item(g, 3, 'Russian Twists', '3x20', 'https://www.youtube.com/watch?v=-BzNffL_6YE');
-  perform public._seed_item(g, 4, 'Bicycle Crunches', '3x20', 'https://www.youtube.com/watch?v=9FGilxCvn08');
+  perform public._seed_item(g, 2, 'Forearm Plank', '3x30-45s');
+  perform public._seed_item(g, 3, 'Russian Twists', '3x20');
+  perform public._seed_item(g, 4, 'Bicycle Crunches', '3x20');
 
   g := public._seed_group('Active Recovery', 'Sunday', 'recovery', 'daily', '{0}', 'sky', 60);
   perform public._seed_item(g, 1, 'Swimming');
@@ -449,6 +449,8 @@ begin
   g := public._seed_group('Yearly Goals', null, 'goal', 'once', null, 'rose', 120);
   perform public._seed_item(g, 1, 'PMP Certification', 'Year 1', p_target_date => (public.app_today() + interval '1 year')::date);
   perform public._seed_item(g, 2, 'Microsoft SC-200', 'Year 2', p_target_date => (public.app_today() + interval '2 years')::date);
+
+  perform public._apply_exercise_guides();
 end;
 $$;
 
@@ -633,9 +635,10 @@ begin
   if s.status = 'approved' and s.approved_item_id is not null then return s.approved_item_id; end if;
   select * into g from public.routine_groups where id = p_group and user_id = auth.uid();
   if g.id is null then raise exception 'group not found'; end if;
-  insert into public.routines_and_goals (group_id, title, details, youtube_url, notes, sort_order)
+  insert into public.routines_and_goals (group_id, title, details, youtube_url, guide_url, guide, notes, sort_order)
   values (g.id, s.title, s.details,
           case when s.youtube_url ~* '^https?://([a-z0-9-]+\.)?(youtube\.com|youtu\.be)/' then s.youtube_url end,
+          s.guide_url, s.guide,
           'AI suggestion: ' || coalesce(s.rationale, ''),
           coalesce((select max(sort_order) + 1 from public.routines_and_goals where group_id = g.id), 0))
   returning id into v_item;
@@ -777,6 +780,11 @@ begin
     perform public.seed_evolt_baseline();
   end if;
   perform public.seed_nutrition();
+  perform public.seed_recipes();
+  insert into public.seed_flags (user_id, name) values (auth.uid(), 'ms_guides') on conflict do nothing;
+  if found then
+    perform public._apply_exercise_guides();
+  end if;
 end;
 $$;
 
@@ -1089,3 +1097,245 @@ end;
 $$;
 revoke all on function public.seed_nutrition() from public, anon;
 grant execute on function public.seed_nutrition() to authenticated;
+
+-- =====================================================================
+-- v7: Recipes (digital cookbook), photo-scanned meals, Muscle & Strength guides
+-- =====================================================================
+
+-- One row per (user, name) means "this one-time seed already ran", so deleted seed data stays deleted.
+create table if not exists public.seed_flags (
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name        text not null,
+  created_at  timestamptz not null default now(),
+  primary key (user_id, name)
+);
+
+create table if not exists public.recipes (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  category      text not null check (length(btrim(category)) between 1 and 60),
+  name          text not null check (length(btrim(name)) between 1 and 120),
+  ingredients   text[] not null default '{}' check (cardinality(ingredients) <= 60),
+  instructions  text[] not null default '{}' check (cardinality(instructions) <= 60),
+  notes         text check (length(notes) <= 2000),
+  sort_order    integer not null default 0,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+create index if not exists recipes_user_idx on public.recipes (user_id, category, sort_order);
+
+alter table public.meal_logs add column if not exists calories_kcal numeric(6, 0) check (calories_kcal between 0 and 10000);
+alter table public.meal_logs add column if not exists fiber_g numeric(6, 1) check (fiber_g between 0 and 1000);
+alter table public.meal_logs add column if not exists micronutrients text[];
+alter table public.meal_logs add column if not exists items jsonb;
+alter table public.meal_logs add column if not exists source text not null default 'manual' check (source in ('manual', 'photo'));
+
+-- Exercise form guides from muscleandstrength.com: link + { target, secondary[], equipment, cues[], tip }.
+alter table public.routines_and_goals add column if not exists guide_url text
+  check (guide_url is null or guide_url ~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+\.html$');
+alter table public.routines_and_goals add column if not exists guide jsonb;
+alter table public.ai_suggestions add column if not exists guide_url text
+  check (guide_url is null or guide_url ~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+\.html$');
+alter table public.ai_suggestions add column if not exists guide jsonb;
+
+do $$
+declare
+  t text;
+begin
+  drop trigger if exists recipes_touch on public.recipes;
+  create trigger recipes_touch before update on public.recipes
+    for each row execute function public.touch_updated_at();
+  foreach t in array array['seed_flags', 'recipes']
+  loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('alter table public.%I force row level security', t);
+    execute format('revoke all on public.%I from anon', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+    execute format('drop policy if exists owner_only on public.%I', t);
+    execute format(
+      'create policy owner_only on public.%I for all to authenticated
+         using (user_id = auth.uid() and public.is_owner())
+         with check (user_id = auth.uid() and public.is_owner())', t);
+  end loop;
+end $$;
+
+create or replace function public._seed_recipe(p_sort integer, p_category text, p_name text,
+                                               p_ingredients text[], p_steps text[])
+returns void
+language sql
+as $$
+  insert into public.recipes (sort_order, category, name, ingredients, instructions)
+  values (p_sort, p_category, p_name, p_ingredients, p_steps)
+$$;
+
+-- First run only: the owner's recipe collection.
+create or replace function public.seed_recipes()
+returns void
+language plpgsql
+as $$
+begin
+  if not public.is_owner() then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+  insert into public.seed_flags (user_id, name) values (auth.uid(), 'recipes') on conflict do nothing;
+  if not found then
+    return;
+  end if;
+
+  perform public._seed_recipe(1, 'Soups', 'Chinese/Myanmar Clear Soup',
+    array['Water', '1 clove white garlic', 'Agamoto seasoning (MSG)', 'Salt', 'Black pepper',
+          'Choice of veg (pear, tofu, Chinese radish, cabbage, spring onion) or chicken bones',
+          'No potatoes, peas or tomato'],
+    array['Boil water.', 'Add garlic, vegetables/bones, salt, pepper and MSG.', 'Simmer until cooked.']);
+  perform public._seed_recipe(2, 'Soups', 'Basic Egg Drop Soup (Microwave)',
+    array['1 cup water', '1 egg', '1/2 tsp cornstarch', 'Chopped green onion', 'Pinch of salt, pepper and MSG'],
+    array['Dissolve cornstarch in 1 tbsp cold water.', 'Add remaining water and seasoning.',
+          'Microwave 2-3 mins until boiling.', 'Beat egg.',
+          'Stir boiling broth in a circle and slowly pour in egg to create ribbons.', 'Top with green onion.']);
+
+  perform public._seed_recipe(1, 'Rice & Noodles', 'Coconut Rice',
+    array['Rice', 'Coconut cream water', 'Salt', 'Onion', 'Butter'],
+    array['Use a rice 2 : water 3 ratio, replacing water with coconut cream water.',
+          'Mix rice, salt, sliced onion and butter with the liquid.', 'Cook until done.']);
+  perform public._seed_recipe(2, 'Rice & Noodles', 'Small Yellow Lentils Rice',
+    array['1 cup mix (half rice, half small yellow lentils)', '1 tsp turmeric', '1 tsp salt', 'Ginger', '1 bay leaf',
+          '1/2 tsp cinnamon', '5 peppercorns', '3 cloves', '1 spoon oil', '1 spoon butter'],
+    array['Wash rice/lentils.', 'Add all spices, oil and butter.', 'Mix well and cook.']);
+  perform public._seed_recipe(3, 'Rice & Noodles', 'Coconut Noodle Soup',
+    array['Chickpea powder', '2 cups water', 'Half can coconut cream', 'Turmeric', 'Chicken bones (optional)'],
+    array['Mix chickpea powder with water.', 'Add coconut cream and turmeric.',
+          'Bring to a boil on the stove, add chicken bones if desired, then lower heat.']);
+  perform public._seed_recipe(4, 'Rice & Noodles', 'Noyar Pad Thai',
+    array['Garlic', 'Onion', 'Chicken sauce', 'Chili sauce', 'Prawns', 'Vegetables', 'Oyster sauce',
+          'Dark/light soy sauce', 'MSG', 'Noodles', 'Eggs', 'Crushed peanuts', 'Lemon slice'],
+    array['Fry garlic and onion.', 'Add sauces and prawns, fry briefly.',
+          'Add veg, a little water, soy sauces and MSG.', 'Add noodles and mix.',
+          'Push aside, crack egg, mix into noodles.', 'Top with peanuts and lemon.']);
+
+  perform public._seed_recipe(1, 'Curries', 'Burmese Style Chicken Curry',
+    array['Chicken', 'Oil', 'Onion', '1/2 spoon chili powder', '1 tsp sugar', '<1/2 spoon turmeric', '1 tsp MSG',
+          'Pinch salt', 'Clover/bay leaves', 'Boiled eggs'],
+    array['Fry onions.', 'Add chicken mixed with chili powder, sugar, turmeric and MSG.', 'Add salt and leaves. Cook.',
+          'Separately cook another batch of chicken with oil, chili and ginger.',
+          'Combine both with boiled eggs and extra onions.']);
+  perform public._seed_recipe(2, 'Curries', 'Indian Style Chicken Curry',
+    array['Chicken (optional yogurt marinade)', 'Oil', 'Sliced onions', 'Garlic', 'Ginger', '1/2 spoon chili powder',
+          '<1/2 spoon turmeric', '1 spoon garam masala', 'Water', 'Salt', 'MSG', 'Clover leaves'],
+    array['Heat oil.', 'Add chicken mixed with spices, garlic and ginger.',
+          'Add onions, water (just enough to cover), salt, MSG and leaves.', 'Cook until tender.']);
+  perform public._seed_recipe(3, 'Curries', 'Fried Egg Curry',
+    array['Eggs', 'Oil', 'Chopped onion', 'Chopped tomatoes', 'Water', 'Chili powder', 'Turmeric', 'Tamarind paste', 'MSG'],
+    array['Fry eggs in low oil and set aside.', 'Fry onions until pale yellow.',
+          'Add tomatoes and water, cover and cook into a paste.', 'Add spices, tamarind and MSG.',
+          'Add eggs and flip gently.']);
+  perform public._seed_recipe(4, 'Curries', 'India Dal Curry',
+    array['Dal (washed/soaked)', 'Ginger', 'Garlic', 'Tomato', 'Onion', '1 spoon oil', 'Turmeric', 'Chili powder',
+          '1 spoon garam masala', 'Water', 'MSG', 'Salt'],
+    array['Heat oil, cook onions golden.', 'Add garlic, ginger, tomatoes and spices.', 'Add water and cook.',
+          'Add soaked dal and fresh water. Cook 30 mins.', 'Transfer to rice cooker until dal breaks apart.',
+          'Add MSG and salt.']);
+  perform public._seed_recipe(5, 'Curries', 'Red Lentils Curry',
+    array['Red lentils', 'Water', 'Chopped onions', 'Ginger', 'Tip of tsp MSG', '1 tsp salt', '1/2 tsp butter',
+          'Crispy fried onions'],
+    array['Rinse lentils, place in rice cooker with water, onions and ginger.',
+          'Watch closely while boiling to prevent overflow.',
+          'Once soft, add MSG, salt, butter and crispy onions.']);
+  perform public._seed_recipe(6, 'Curries', 'Spiced Yogurt & Chickpea Curry (Kadhi)',
+    array['2 tbsp chickpea powder', 'Water', 'Butter', 'Pinch cumin', 'Yogurt', 'Fresh mint', 'Fresh green chilies',
+          'Garlic', 'Salt'],
+    array['Dissolve chickpea powder in water.', 'Heat butter and cumin.', 'Add chickpea mixture.',
+          'Simmer, then add pounded paste of mint, chili and garlic.', 'Stir in yogurt and salt.',
+          'Bring to a boil and serve.']);
+  perform public._seed_recipe(7, 'Curries', 'Ramadan Egg Chicken & Biryani Base',
+    array['Onions', 'Ginger', 'Garlic', 'Turmeric (for Ramadan version)', 'Yogurt (for Biryani version)',
+          'Garam/biryani masala', 'Salt', 'MSG', 'Chicken', 'Soaked raisins', 'Cashews'],
+    array['Fry onions and remove most.', 'Mix ginger, garlic, spices, salt and MSG.',
+          'Add 2 spoons water and cook chicken.', 'Add raisins, cashews and the fried onions back.']);
+
+  perform public._seed_recipe(1, 'Egg & Sardine', 'Sardine Egg Recipe',
+    array['1/2 chopped onion', 'Oil', '1/2 tsp turmeric', '2 spoons chili powder', 'Canned sardines (liquid separated)',
+          'Eggs', 'Salt', 'MSG'],
+    array['Fry onions pale yellow.', 'Add turmeric and chili powder.', 'Pour in sardine liquid, drop in eggs.',
+          'Add salt and MSG.', 'Add sardines, stir gently, boil and serve.']);
+
+  perform public._seed_recipe(1, 'Salads & Veg', 'Rice Salad (Amon)',
+    array['Oil', 'Chopped onions', 'Peanut crisps', 'Shrimp crisps', 'Chili sauce', 'Cooked rice'],
+    array['Fry onions and reserve the oil.', 'Make a paste with onions, crisps and chili sauce.',
+          'Mix until crunchy.', 'Add rice.', 'Top with 1 tbsp of the reserved infused oil.']);
+  perform public._seed_recipe(2, 'Salads & Veg', 'Basic Leaf Salad',
+    array['Leafy greens', 'Onion', 'Chili sauce', 'Cooked onion oil', 'Chickpea powder/peanuts', 'Shrimp powder'],
+    array['Toss all ingredients together.']);
+  perform public._seed_recipe(3, 'Salads & Veg', 'Indian Way (Vegetables)',
+    array['Peas/carrots', 'Red onions', 'Oil', 'Turmeric', 'Water', 'Salt', 'MSG'],
+    array['Heat oil, add onions, veg and turmeric.', 'Add water, cover and cook until soft.', 'Season.']);
+  perform public._seed_recipe(4, 'Salads & Veg', 'Chinese Way (Stir-Fried Greens)',
+    array['Watercress/bok choy/spinach', 'Garlic', 'Oil', 'Oyster sauce', 'Soy sauce', 'Cornstarch water'],
+    array['Fry garlic in oil.', 'Add greens.', 'Add sauces.', 'Thicken with cornstarch water.']);
+
+  perform public._seed_recipe(1, 'Desserts', 'Samine Recipe',
+    array['Milk', 'Sugar', 'Butter', 'Pinch of salt', 'Samine'],
+    array['Boil milk.', 'Add sugar, butter and salt.', 'Boil again, add Samine.',
+          'Wait max 2 minutes (adjust based on brand).', 'Remove from heat to cool.']);
+end;
+$$;
+
+-- Muscle & Strength form guides for the baseline routine (cues summarised, full guide at the link).
+-- Exercises without an M&S page keep a guide but no link. YouTube links on these items are dropped.
+create or replace function public._apply_exercise_guides()
+returns void
+language sql
+as $$
+  with g(title, slug, guide) as (values
+    ('puppy pose (thoracic extension)', null, '{"target":"Upper back, lats","secondary":["Shoulders"],"equipment":"Bodyweight","cues":["Start on all fours, walk your hands forward and keep hips stacked over knees.","Melt your chest toward the floor and let your upper back extend.","Breathe slowly; keep arms long and active."],"tip":"Stop short of any pinching in the shoulders or low back."}'),
+    ('doorframe lat stretch', null, '{"target":"Lats","secondary":["Shoulders","Obliques"],"equipment":"Doorframe","cues":["Grip the frame at head height with one hand.","Sit your hips back and away to lengthen the side of your trunk.","Breathe into the stretched side, then switch."],"tip":"Keep ribs down so the stretch stays in the lat, not the low back."}'),
+    ('kneeling wrist flexion', null, '{"target":"Forearms, wrists","secondary":[],"equipment":"Bodyweight","cues":["Kneel with palms down and fingers pointing toward your knees.","Shift weight back gently until you feel the forearms stretch.","Keep elbows straight and pressure light."],"tip":"Useful prep for handstands and flips; never force the end range."}'),
+    ('kneeling hip flexor lunge', null, '{"target":"Hip flexors","secondary":["Quads"],"equipment":"Bodyweight","cues":["Half-kneel with the front knee over the ankle.","Tuck your pelvis and squeeze the back-leg glute.","Shift forward slightly until the front of the back hip stretches."],"tip":"Squeezing the glute matters more than leaning far forward."}'),
+    ('seated hamstring fold', null, '{"target":"Hamstrings","secondary":["Lower back","Calves"],"equipment":"Bodyweight","cues":["Sit tall with legs straight and toes up.","Hinge from the hips, reaching toward your feet.","Keep the back long rather than rounding to go deeper."],"tip":"Bend the knees slightly if the stretch is felt behind the knee."}'),
+    ('butterfly stretch', null, '{"target":"Adductors","secondary":["Hips"],"equipment":"Bodyweight","cues":["Sit with soles together and heels close to the body.","Sit tall and let the knees drop toward the floor.","Lean forward from the hips for more stretch."],"tip":"Press knees down with elbows only gently."}'),
+    ('incline push-ups', 'incline-push-ups', '{"target":"Chest","secondary":["Shoulders","Triceps","Abs"],"equipment":"Bodyweight","cues":["Hands on a bench, body in one straight line from head to heels.","Lower with control until your chest reaches the bench.","Press the bench away to straighten the arms."],"tip":"Elbows at roughly 45 degrees (an arrow shape, not a T); brace like a moving plank."}'),
+    ('seated db shoulder press', 'seated-dumbbell-press', '{"target":"Shoulders","secondary":["Triceps","Traps"],"equipment":"Dumbbell","cues":["Bench upright; kick the dumbbells up from your knees one at a time.","Press overhead, finishing with the biceps near the ears.","Lower slowly to about shoulder height."],"tip":"Keep your back on the pad and head neutral; exhale as you press."}'),
+    ('flat db bench press', 'dumbbell-bench-press', '{"target":"Chest","secondary":["Shoulders","Triceps"],"equipment":"Dumbbell","cues":["Lie flat with shoulder blades pulled back and down.","Lower the dumbbells to the sides of your chest with elbows tucked slightly.","Press up and slightly in until arms are straight."],"tip":"Keep feet planted and the upper back tight throughout."}'),
+    ('cable lateral raises', 'one-arm-cable-lateral-raise', '{"target":"Shoulders","secondary":["Traps"],"equipment":"Cable","cues":["Stand side-on to a low pulley and take the handle across your body.","Raise the arm out to the side to shoulder height with a soft elbow.","Lower slowly against the cable."],"tip":"Lead with the elbow and avoid shrugging."}'),
+    ('rope tricep pushdowns', 'rope-tricep-extension', '{"target":"Triceps","secondary":[],"equipment":"Cable","cues":["Grip the rope with elbows pinned to your sides.","Push down until the arms are straight, spreading the rope ends apart.","Return slowly until forearms are just above parallel."],"tip":"Only the forearms should move; no leaning or swinging."}'),
+    ('hanging knee raises', 'hanging-knee-raise', '{"target":"Abs","secondary":["Forearms"],"equipment":"Bodyweight","cues":["Hang from the bar with shoulders engaged.","Curl the knees toward the chest while tilting the pelvis up.","Lower with control without swinging."],"tip":"Think about curling the hips, not just lifting the knees."}'),
+    ('assisted pull-up', 'close-grip-pull-up', '{"target":"Lats","secondary":["Biceps","Upper back","Abs"],"equipment":"Assisted machine / band","cues":["Shoulder-width overhand grip; brace abs and squeeze glutes.","Pull the shoulder blades down, then drive the elbows toward the floor.","Bring your chin to the bar and lower slowly to full hang."],"tip":"Use less assistance over time; keep the head neutral."}'),
+    ('single-arm db rows', 'one-arm-dumbbell-row', '{"target":"Upper back","secondary":["Lats","Biceps","Shoulders"],"equipment":"Dumbbell","cues":["Support one hand and knee on a bench, back flat.","Row the dumbbell toward your hip, leading with the elbow.","Lower until the arm is straight and the shoulder stretches."],"tip":"Do not rotate the torso to move more weight."}'),
+    ('inverted rows', 'high-inverted-row', '{"target":"Upper back","secondary":["Lats","Biceps"],"equipment":"Bodyweight (bar or Smith machine)","cues":["Hang under a bar with body straight and heels on the floor.","Pull your chest to the bar, squeezing the shoulder blades together.","Lower under control to straight arms."],"tip":"Lower the bar or raise your feet to make it harder."}'),
+    ('incline db curls', 'incline-dumbbell-curl', '{"target":"Biceps","secondary":["Forearms"],"equipment":"Dumbbell","cues":["Sit back on an incline bench with arms hanging straight down.","Curl up keeping the upper arms still.","Lower fully for a deep stretch."],"tip":"Lighter weight than standing curls; avoid swinging the shoulders forward."}'),
+    ('db hammer curls', 'standing-hammer-curl', '{"target":"Biceps","secondary":["Forearms"],"equipment":"Dumbbell","cues":["Stand tall holding dumbbells with palms facing each other.","Curl up keeping elbows at your sides.","Lower slowly to full extension."],"tip":"Keep the neutral grip the whole rep to hit the brachialis and forearms."}'),
+    ('face pulls', null, '{"target":"Rear delts","secondary":["Upper back","Rotator cuff"],"equipment":"Cable + rope","cues":["Set the rope at upper-chest to face height.","Pull toward your face, splitting the rope and pointing elbows out.","Finish with hands beside the ears, then return slowly."],"tip":"Light weight, slow reps; good for posture and shoulder health."}'),
+    ('assisted box tuck jumps', null, '{"target":"Quads, glutes","secondary":["Calves","Hip flexors","Abs"],"equipment":"Box / bodyweight","cues":["Dip quickly and swing the arms to jump.","Pull the knees up toward the chest at the top.","Land softly on the balls of the feet with knees bent."],"tip":"Quality over quantity: stop the set when landings get loud."}'),
+    ('db goblet squats/leg press', '45-degree-leg-press', '{"target":"Quads","secondary":["Glutes","Hamstrings","Adductors"],"equipment":"Dumbbell or leg press","cues":["Leg press: feet shoulder-width on the sled.","Lower until knees reach about 90 degrees without the hips rolling off the pad.","Push back up, stopping just short of locking the knees."],"tip":"Goblet squat: hold the dumbbell at the chest, sit between the heels, chest up."}'),
+    ('db walking lunges', 'dumbbell-walking-lunge', '{"target":"Quads","secondary":["Glutes","Hamstrings","Adductors","Calves"],"equipment":"Dumbbell","cues":["Hold a dumbbell in each hand, feet hip-width.","Step forward and drop the back knee toward the floor.","Drive through the front foot to stand and step into the next rep."],"tip":"Master bodyweight lunges first; keep the torso upright."}'),
+    ('seated leg curls', 'leg-curl', '{"target":"Hamstrings","secondary":[],"equipment":"Machine","cues":["Set the pad just above the ankles.","Curl the heels toward the glutes and pause briefly.","Return slowly to almost straight legs."],"tip":"Slow lowering does most of the work; exhale on the curl."}'),
+    ('standing machine calf raises', 'standing-calf-raise', '{"target":"Calves","secondary":[],"equipment":"Machine / barbell","cues":["Balls of the feet on the edge of the platform.","Rise as high as possible and squeeze.","Lower the heels slowly into a full stretch."],"tip":"No bouncing; pause at the top and bottom."}'),
+    ('hollow body holds', null, '{"target":"Abs","secondary":["Hip flexors"],"equipment":"Bodyweight","cues":["Lie on your back and press the low back into the floor.","Lift shoulders and legs, arms reaching overhead.","Hold a shallow banana shape and breathe."],"tip":"Bend the knees if your low back lifts off the floor. Key for flips."}'),
+    ('stomach vacuums', null, '{"target":"Transverse abdominis","secondary":[],"equipment":"Bodyweight","cues":["Exhale fully.","Draw the belly button in toward the spine and hold.","Breathe shallowly through the hold, then release."],"tip":"Best on an empty stomach; build up hold time gradually."}'),
+    ('stairmaster & elliptical', null, '{"target":"Cardio","secondary":["Quads","Glutes","Calves"],"equipment":"Machine","cues":["Stand tall without leaning on the rails.","Keep a steady pace you can hold for the full time.","Push through the whole foot."],"tip":"Hands-free on the StairMaster burns more and builds balance."}'),
+    ('forearm plank', 'hover', '{"target":"Abs","secondary":["Lower back"],"equipment":"Bodyweight","cues":["Forearms down, elbows under shoulders, feet hip-width.","Lift into one straight line from head to heels.","Brace the core and squeeze the glutes so hips do not sag."],"tip":"Look at the floor; stop the set when form breaks."}'),
+    ('russian twists', 'russian-twist', '{"target":"Abs","secondary":["Obliques"],"equipment":"Bodyweight","cues":["Sit with knees bent and lean back slightly.","Rotate the torso to one side, then the other.","Keep the chest up and move with control."],"tip":"Lift your feet or hold a weight to make it harder."}'),
+    ('bicycle crunches', 'abdominal-air-bike', '{"target":"Abs","secondary":["Obliques"],"equipment":"Bodyweight","cues":["Lie on your back, shoulders off the floor.","Bring one knee in while turning the opposite elbow toward it.","Alternate sides slowly while the other leg stays extended."],"tip":"Exhale hard on each twist; do not pull on your neck."}')
+  )
+  update public.routines_and_goals r
+     set guide_url = case when g.slug is null then null
+                          else 'https://www.muscleandstrength.com/exercises/' || g.slug || '.html' end,
+         guide = g.guide::jsonb,
+         youtube_url = null
+    from g
+   where lower(btrim(r.title)) = g.title
+     and r.guide is null
+     and r.user_id = auth.uid();
+$$;
+
+do $$
+declare f text;
+begin
+  foreach f in array array[
+    'public._seed_recipe(integer, text, text, text[], text[])',
+    'public.seed_recipes()',
+    'public._apply_exercise_guides()'
+  ] loop
+    execute format('revoke all on function %s from public, anon', f);
+    execute format('grant execute on function %s to authenticated', f);
+  end loop;
+end $$;

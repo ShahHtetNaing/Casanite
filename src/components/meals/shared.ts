@@ -1,6 +1,6 @@
 import { APP_TIMEZONE } from "@/lib/config";
 import { zonedParts } from "@/lib/date";
-import type { MealSlot } from "@/lib/types";
+import type { MealLog, MealSlot } from "@/lib/types";
 
 export const MEAL_LABEL: Record<MealSlot, string> = {
   breakfast: "Breakfast",
@@ -41,3 +41,6 @@ export function formatTime(iso: string) {
 export function timeOf(iso: string) {
   return new Date(iso).toLocaleTimeString("en-GB", { timeZone: APP_TIMEZONE, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 }
+
+export type MealFields = Pick<MealLog, "meal" | "description" | "protein_g" | "carbs_g" | "veg_servings" | "with_milk"> &
+  Partial<Pick<MealLog, "calories_kcal" | "fiber_g" | "micronutrients" | "items" | "source">>;

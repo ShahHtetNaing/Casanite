@@ -128,8 +128,8 @@ export function ItemRow({
         )}
       </div>
 
-      {(SHOW_TUTORIAL_KINDS.has(group.kind) || item.youtube_url) && (
-        <TutorialButton url={item.youtube_url} title={item.title} />
+      {(SHOW_TUTORIAL_KINDS.has(group.kind) || item.youtube_url || item.guide_url || item.guide) && (
+        <TutorialButton url={item.youtube_url} title={item.title} guideUrl={item.guide_url} guide={item.guide} />
       )}
 
       {editMode && (

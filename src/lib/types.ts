@@ -59,6 +59,8 @@ export interface RoutineItem {
   title: string;
   details: string | null;
   youtube_url: string | null;
+  guide_url: string | null;
+  guide: ExerciseGuide | null;
   notes: string | null;
   frequency: Frequency | null;
   days_of_week: number[] | null;
@@ -150,7 +152,16 @@ export interface EvoltAnalysis {
   strengths: string[];
   improvements: string[];
   goal_plan: string;
-  exercises: { title: string; details: string; rationale: string; youtube_url?: string; suggested_day?: number }[];
+  exercises: {
+    title: string;
+    details: string;
+    rationale: string;
+    youtube_url?: string;
+    ms_name?: string | null;
+    target?: string;
+    cues?: unknown[];
+    suggested_day?: number;
+  }[];
 }
 
 export interface EvoltScan {
@@ -179,6 +190,8 @@ export interface AiSuggestion {
   details: string | null;
   rationale: string | null;
   youtube_url: string | null;
+  guide_url: string | null;
+  guide: ExerciseGuide | null;
   suggested_day: number | null;
   status: "pending" | "approved" | "dismissed";
   approved_item_id: string | null;
@@ -261,6 +274,11 @@ export interface MealLog {
   carbs_g: number | null;
   veg_servings: number | null;
   with_milk: boolean;
+  calories_kcal: number | null;
+  fiber_g: number | null;
+  micronutrients: string[] | null;
+  items: { name: string; grams: number | null }[] | null;
+  source: "manual" | "photo";
   created_at: string;
 }
 
@@ -332,5 +350,24 @@ export interface SavedWord {
   definition: string | null;
   synonyms: string[];
   examples: string[];
+  created_at: string;
+}
+
+export interface ExerciseGuide {
+  target?: string;
+  secondary?: string[];
+  equipment?: string;
+  cues?: string[];
+  tip?: string;
+}
+
+export interface Recipe {
+  id: string;
+  category: string;
+  name: string;
+  ingredients: string[];
+  instructions: string[];
+  notes: string | null;
+  sort_order: number;
   created_at: string;
 }

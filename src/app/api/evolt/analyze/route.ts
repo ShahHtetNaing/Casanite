@@ -1,6 +1,7 @@
 import { ownerRoute } from "@/lib/owner-route";
 import { extractText, getDocumentProxy } from "unpdf";
 import { chatJson } from "@/lib/ai";
+import { findMsGuide, MS_EXERCISE_NAMES } from "@/lib/ms-guide";
 import type { EvoltAnalysis, EvoltScan } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,9 @@ const SHAPE = `{
   "analysis": {
     "overview": string, "strengths": string[], "improvements": string[], "goal_plan": string,
     "exercises": [{ "title": string, "details": string (sets x reps or duration, e.g. "4x6-8"), "rationale": string,
-                   "youtube_url": string | null, "suggested_day": integer 0-6 (0=Sun) | null }]
+                   "ms_name": string | null (exact name from the Muscle & Strength list, or null if none fits),
+                   "target": string (main muscle group), "cues": string[] (3 short form cues in your own words),
+                   "suggested_day": integer 0-6 (0=Sun) | null }]
   }
 }`;
 
@@ -29,7 +32,8 @@ type Result = {
 const SYSTEM =
   "You are a strength & conditioning coach and body-composition analyst. The user's goals: reach 145-150 lb " +
   "(65.8-68.0 kg) while building calisthenics and flip (backflip/front flip) strength. Give practical, safe advice. " +
-  "Suggest 4-6 specific exercises that are NOT already in their routine. Only include a youtube_url if you are certain it exists; otherwise null.";
+  "Suggest 4-6 specific exercises that are NOT already in their routine. Prefer exercises from the Muscle & Strength " +
+  "exercise list you are given, use that exact name as ms_name, and title the exercise the same way when possible.";
 
 export async function POST(req: Request) {
   const { scanId } = (await req.json().catch(() => ({}))) as { scanId?: string };
@@ -62,7 +66,8 @@ export async function POST(req: Request) {
       `${reportText ? `Text extracted from my Evolt 360 body scan PDF:\n"""${reportText}"""\nExtract its values, then analyse it.` : `Analyse this Evolt 360 scan (${s.pdf_path ? "PDF text unreadable" : "no PDF"}; use the stored values below).`}\n` +
       `Stored values: ${JSON.stringify({ ...s, analysis: undefined, pdf_path: undefined })}\n` +
       `Scan history: ${JSON.stringify(history ?? [])}\n` +
-      `Current routine (do not repeat these): ${(items ?? []).map((i) => i.title).join("; ")}`;
+      `Current routine (do not repeat these): ${(items ?? []).map((i) => i.title).join("; ")}\n` +
+      `Muscle & Strength exercise list: ${MS_EXERCISE_NAMES.join("; ")}`;
 
     const result = await chatJson<Result>(SYSTEM, prompt, SHAPE);
     const x = result.extracted ?? {};
@@ -99,7 +104,12 @@ export async function POST(req: Request) {
       title: e.title,
       details: e.details,
       rationale: e.rationale,
-      youtube_url: e.youtube_url && /^https?:\/\/([a-z0-9-]+\.)?(youtube\.com|youtu\.be)\//i.test(e.youtube_url) ? e.youtube_url : null,
+      youtube_url: null,
+      guide_url: findMsGuide(e.ms_name) ?? findMsGuide(e.title),
+      guide: {
+        target: typeof e.target === "string" ? e.target.slice(0, 80) : undefined,
+        cues: (Array.isArray(e.cues) ? e.cues : []).filter((c): c is string => typeof c === "string").map((c) => c.slice(0, 200)).slice(0, 4),
+      },
       suggested_day: typeof e.suggested_day === "number" && e.suggested_day >= 0 && e.suggested_day <= 6 ? e.suggested_day : null,
     }));
     const { data: suggestions, error: sErr } = rows.length
