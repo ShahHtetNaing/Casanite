@@ -441,6 +441,22 @@ function SuggestionRow({
           {s.title} {s.details && <span className="tabular-nums text-xs text-blue-600 dark:text-blue-300">· {s.details}</span>}
         </div>
         {s.rationale && <p className="text-xs text-muted-foreground">{s.rationale}</p>}
+        {(s.guide_url || !!s.guide?.cues?.length) && (
+          <div className="text-xs">
+            {!!s.guide?.cues?.length && (
+              <ul className="list-disc pl-4 text-muted-foreground">
+                {s.guide.cues.map((c, i) => (
+                  <li key={i}>{c}</li>
+                ))}
+              </ul>
+            )}
+            {s.guide_url && (
+              <a href={s.guide_url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">
+                Muscle & Strength guide ↗
+              </a>
+            )}
+          </div>
+        )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <select aria-label={`Routine group for ${s.title}`} className={`${selectClass} w-auto flex-1`} value={groupId} onChange={(e) => setGroupId(e.target.value)}>

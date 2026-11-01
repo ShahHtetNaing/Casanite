@@ -15,9 +15,8 @@ import { cn } from "@/lib/utils";
 import { MEAL_SLOTS, type InsulinLog, type MealLog, type MealSlot, type NutritionSettings, type Supplement, type SupplementLog } from "@/lib/types";
 import { InsulinCard } from "./insulin-card";
 import { SupplementsCard } from "./supplements-card";
-import { MEAL_LABEL, currentMeal, selectClass, toNum } from "./shared";
-
-type MealFields = Omit<MealLog, "id" | "day" | "created_at">;
+import { ScanMeal } from "./scan-meal";
+import { MEAL_LABEL, currentMeal, selectClass, toNum, type MealFields } from "./shared";
 
 type Props = {
   day: string;
@@ -57,8 +56,9 @@ export function Meals(props: Props) {
       protein: t.protein + Number(m.protein_g ?? 0),
       carbs: t.carbs + Number(m.carbs_g ?? 0),
       veg: t.veg + Number(m.veg_servings ?? 0),
+      kcal: t.kcal + Number(m.calories_kcal ?? 0),
     }),
-    { protein: 0, carbs: 0, veg: 0 },
+    { protein: 0, carbs: 0, veg: 0, kcal: 0 },
   );
 
   // Rules apply per sitting: everything logged under one meal slot counts as eaten together.
@@ -144,6 +144,7 @@ export function Meals(props: Props) {
               <Macro label="Carbs" value={totals.carbs} target={settings.carbs_g_target} unit="g" limit />
               <Macro label="Veg" value={totals.veg} target={settings.veg_target} unit="servings" />
             </div>
+            {totals.kcal > 0 && <p className="text-sm text-muted-foreground">About {Math.round(totals.kcal)} kcal logged today</p>}
             <WeightGoal kg={props.latestWeightKg} min={settings.goal_lbs_min} max={settings.goal_lbs_max} />
             {showSettings && <SettingsForm settings={settings} onSaved={(s) => (setSettings(s), setShowSettings(false))} onCancel={() => setShowSettings(false)} />}
           </CardContent>
@@ -195,7 +196,7 @@ export function Meals(props: Props) {
                           {m.with_milk && <Milk className="ml-1.5 inline size-3.5 text-muted-foreground" aria-label="with milk" />}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {[m.protein_g != null && `${m.protein_g} g protein`, m.carbs_g != null && `${m.carbs_g} g carbs`, m.veg_servings != null && `${m.veg_servings} veg`]
+                          {[m.calories_kcal != null && `${m.calories_kcal} kcal`, m.protein_g != null && `${m.protein_g} g protein`, m.carbs_g != null && `${m.carbs_g} g carbs`, m.fiber_g != null && `${m.fiber_g} g fiber`, m.veg_servings != null && `${m.veg_servings} veg`, m.source === "photo" && "photo scan"]
                             .filter(Boolean)
                             .join(" · ") || "No macros"}
                         </p>
@@ -221,7 +222,13 @@ export function Meals(props: Props) {
           <Plus className="size-4 text-primary" />
           <CardTitle>Log food</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="grid gap-4">
+          <ScanMeal
+            defaultMeal={day === today ? currentMeal() : "lunch"}
+            warningsFor={(v) => slotWarnings(v.meal, meals, v)}
+            onLog={addMeal}
+            Warnings={Warnings}
+          />
           <MealForm
             key={meals.length}
             initial={null}
