@@ -25,7 +25,7 @@ export default async function MealsPage({ searchParams }: { searchParams: Promis
     supabase.from("meal_logs").select("*").eq("day", day).order("created_at"),
     supabase
       .from("meal_logs")
-      .select("description, meal, protein_g, carbs_g, veg_servings, with_milk")
+      .select("description, meal, protein_g, carbs_g, veg_servings, with_milk, calories_kcal, fiber_g")
       .order("created_at", { ascending: false })
       .limit(80),
     supabase.from("insulin_logs").select("*").eq("day", day).order("taken_at"),

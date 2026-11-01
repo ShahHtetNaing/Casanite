@@ -64,7 +64,11 @@ export function Meals(props: Props) {
   // Rules apply per sitting: everything logged under one meal slot counts as eaten together.
   function slotWarnings(slot: MealSlot, list: MealLog[], extra?: { description: string; with_milk: boolean }, skipId?: string) {
     const entries = list.filter((m) => m.meal === slot && m.id !== skipId);
-    const texts = [...entries.map((m) => m.description), ...(extra ? [extra.description] : [])];
+    // Photo scans may name foods (e.g. "orange") that the short description leaves out.
+    const texts = [
+      ...entries.map((m) => [m.description, ...(m.items ?? []).map((i) => i.name)].join(", ")),
+      ...(extra ? [extra.description] : []),
+    ];
     if (!texts.some((t) => t.trim())) return [];
     return checkMeal(texts, entries.some((m) => m.with_milk) || !!extra?.with_milk);
   }
@@ -326,6 +330,8 @@ function MealForm({
   const [protein, setProtein] = useState(initial?.protein_g != null ? String(initial.protein_g) : "");
   const [carbs, setCarbs] = useState(initial?.carbs_g != null ? String(initial.carbs_g) : "");
   const [veg, setVeg] = useState(initial?.veg_servings != null ? String(initial.veg_servings) : "");
+  const [kcal, setKcal] = useState(initial?.calories_kcal != null ? String(initial.calories_kcal) : "");
+  const [fiber, setFiber] = useState(initial?.fiber_g != null ? String(initial.fiber_g) : "");
   const [withMilk, setWithMilk] = useState(initial?.with_milk ?? false);
   const [saving, setSaving] = useState(false);
 
@@ -336,16 +342,31 @@ function MealForm({
     setProtein(m.protein_g != null ? String(m.protein_g) : "");
     setCarbs(m.carbs_g != null ? String(m.carbs_g) : "");
     setVeg(m.veg_servings != null ? String(m.veg_servings) : "");
+    setKcal(m.calories_kcal != null ? String(m.calories_kcal) : "");
+    setFiber(m.fiber_g != null ? String(m.fiber_g) : "");
     setWithMilk(m.with_milk);
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const nums = [toNum(protein), toNum(carbs), toNum(veg)];
+    const nums = [toNum(protein), toNum(carbs), toNum(veg), toNum(kcal), toNum(fiber)];
     if (!description.trim()) return toast.error("Describe what you ate");
     if (nums.some((n) => Number.isNaN(n))) return toast.error("Macros must be positive numbers");
     setSaving(true);
-    await onSubmit({ meal, description: description.trim(), protein_g: nums[0], carbs_g: nums[1], veg_servings: nums[2], with_milk: withMilk });
+    const desc = description.trim();
+    // A renamed photo scan no longer matches its detected items, so drop them.
+    const stale = initial?.items != null && desc !== initial.description;
+    await onSubmit({
+      meal,
+      description: desc,
+      protein_g: nums[0],
+      carbs_g: nums[1],
+      veg_servings: nums[2],
+      calories_kcal: nums[3] == null ? null : Math.round(nums[3]),
+      fiber_g: nums[4],
+      with_milk: withMilk,
+      ...(stale ? { items: null, micronutrients: null } : {}),
+    });
     setSaving(false);
   }
 
@@ -387,6 +408,8 @@ function MealForm({
         <Input type="number" inputMode="decimal" step="any" min="0" value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="Protein g" aria-label="Protein grams" className="w-28" />
         <Input type="number" inputMode="decimal" step="any" min="0" value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="Carbs g" aria-label="Carbs grams" className="w-28" />
         <Input type="number" inputMode="decimal" step="any" min="0" value={veg} onChange={(e) => setVeg(e.target.value)} placeholder="Veg servings" aria-label="Veg servings" className="w-28" />
+        <Input type="number" inputMode="decimal" step="any" min="0" value={kcal} onChange={(e) => setKcal(e.target.value)} placeholder="kcal" aria-label="Calories" className="w-24" />
+        <Input type="number" inputMode="decimal" step="any" min="0" value={fiber} onChange={(e) => setFiber(e.target.value)} placeholder="Fiber g" aria-label="Fiber grams" className="w-24" />
         <label className="flex cursor-pointer items-center gap-1.5 text-sm">
           <input type="checkbox" checked={withMilk} onChange={(e) => setWithMilk(e.target.checked)} className="size-4 accent-primary" />
           With milk

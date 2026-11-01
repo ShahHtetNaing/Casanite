@@ -1320,7 +1320,8 @@ as $$
      set guide_url = case when g.slug is null then null
                           else 'https://www.muscleandstrength.com/exercises/' || g.slug || '.html' end,
          guide = g.guide::jsonb,
-         youtube_url = null
+         -- only drop the links that came from the original seed; keep ones the owner added
+         youtube_url = case when r.youtube_url in ('https://www.youtube.com/watch?v=-BzNffL_6YE','https://www.youtube.com/watch?v=1FjkhpZsaxc','https://www.youtube.com/watch?v=2PNT-FFKLgY','https://www.youtube.com/watch?v=4yO3Jk5U3X4','https://www.youtube.com/watch?v=5OWbZ9Oxz0E','https://www.youtube.com/watch?v=8b5n4wR_uEQ','https://www.youtube.com/watch?v=9FGilxCvn08','https://www.youtube.com/watch?v=ASdvN_XEl_c','https://www.youtube.com/watch?v=D7KaRcUTQeE','https://www.youtube.com/watch?v=HJZh-12p6vg','https://www.youtube.com/watch?v=NEdo_I3OuVk','https://www.youtube.com/watch?v=NtfYZt4vlrI','https://www.youtube.com/watch?v=X-ACS9vpRyU','https://www.youtube.com/watch?v=cub3xhJXsAA','https://www.youtube.com/watch?v=f_OGBg2KxgY','https://www.youtube.com/watch?v=gx0RWT7WbmA','https://www.youtube.com/watch?v=hXTc1mDnZCw','https://www.youtube.com/watch?v=kYv_8wZzG9E','https://www.youtube.com/watch?v=lRYBbchqxtI','https://www.youtube.com/watch?v=pYcpY20QaE8','https://www.youtube.com/watch?v=qEwKCR5JCog','https://www.youtube.com/watch?v=sHSY0Ao8QHs','https://www.youtube.com/watch?v=soxrZlIl35U','https://www.youtube.com/watch?v=tR2UYHTTv5U') then null else r.youtube_url end
     from g
    where lower(btrim(r.title)) = g.title
      and r.guide is null
