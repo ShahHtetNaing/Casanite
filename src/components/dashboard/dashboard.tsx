@@ -202,7 +202,7 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
       const workout = groupById.get(existing.group_id)?.kind === "exercise" || groupById.get(values.group_id)?.kind === "exercise";
       const guided = [groupById.get(existing.group_id)?.kind, groupById.get(values.group_id)?.kind]
         .some((kind) => kind != null && GUIDED_ITEM_KINDS.has(kind));
-      const changed = existing.title !== values.title && guided;
+      const changed = existing.title.trim().toLowerCase() !== values.title.trim().toLowerCase() && guided;
       const matched = changed ? workoutGuideFor(values.title) : null;
       const changes = changed ? {
         ...values,

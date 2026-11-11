@@ -1464,7 +1464,7 @@ create policy owner_only on public.workout_sessions for all to authenticated
 create or replace function public.clear_stale_exercise_guide()
 returns trigger language plpgsql as $$
 begin
-  if new.title is distinct from old.title and exists (
+  if lower(btrim(new.title)) is distinct from lower(btrim(old.title)) and exists (
     select 1 from public.routine_groups where id in (old.group_id, new.group_id) and kind in ('exercise', 'recovery')
   ) then
     if new.guide_url is not distinct from old.guide_url then new.guide_url := null; end if;
@@ -1504,8 +1504,8 @@ begin
         and kind = 'exercise' and user_id = auth.uid()
     ) then raise exception 'exercise not found' using errcode = '22023'; end if;
     v_order := old_item.sort_order;
-    if old_item.title = btrim(p_title) and old_item.group_id = p_group then
-      update public.routines_and_goals set group_id = p_group, notes = p_notes,
+    if lower(btrim(old_item.title)) = lower(btrim(p_title)) and old_item.group_id = p_group then
+      update public.routines_and_goals set title = btrim(p_title), group_id = p_group, notes = p_notes,
         workout_template = p_sets, workout_rest_seconds = p_rest_seconds,
         details = jsonb_array_length(p_sets)::text || ' sets',
         guide_url = p_guide_url, guide = p_guide
@@ -1545,7 +1545,7 @@ begin
   new_item.user_id := auth.uid();
   new_item.created_at := now();
   new_item.updated_at := now();
-  if new_item.title is distinct from old_item.title then new_item.workout_template := null; end if;
+  if lower(btrim(new_item.title)) is distinct from lower(btrim(old_item.title)) then new_item.workout_template := null; end if;
   update public.routines_and_goals set is_active = false where id = old_item.id;
   insert into public.routines_and_goals select (new_item).*;
   return new_item.id;

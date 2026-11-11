@@ -371,7 +371,7 @@ export function Workout({ day, today, groups: initialGroups, items: initialItems
         {group.description && <p className="text-xs text-muted-foreground">{group.description}</p>}
         <div className="grid gap-3 xl:grid-cols-2">{exerciseItems.map((item) => <ExerciseCard key={`${item.id}-${day}`} item={item}
           saved={sessions.find((s) => s.item_id === item.id)}
-          previous={priorSessions.find((s) => s.item_id === item.id && s.exercise_name === item.title)}
+          previous={priorSessions.find((s) => s.item_id === item.id && s.exercise_name.trim().toLowerCase() === item.title.trim().toLowerCase())}
           onSave={saveSets} onEdit={() => setEditing(item)} onRemove={() => removeExercise(item)} />)}</div>
         {exerciseItems.length === 0 && <p className="text-sm text-muted-foreground">No exercises in this workout yet.</p>}
       </section>)}
