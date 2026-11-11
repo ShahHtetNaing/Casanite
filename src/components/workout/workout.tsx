@@ -241,7 +241,7 @@ export function Workout({ day, today, groups: initialGroups, items: initialItems
   const [installing, setInstalling] = useState(false);
   const [previewPlan, setPreviewPlan] = useState(false);
   const [groupName, setGroupName] = useState("");
-  const [groupDay, setGroupDay] = useState(1);
+  const [groupDays, setGroupDays] = useState<number[]>([]);
   const [busyGroup, setBusyGroup] = useState(false);
 
   const weekday = byDay(day);
@@ -291,14 +291,14 @@ export function Workout({ day, today, groups: initialGroups, items: initialItems
   function openGroup(g: RoutineGroup | "new") {
     setEditingGroup(g);
     setGroupName(g === "new" ? "" : g.title);
-    setGroupDay(g === "new" ? weekday : (g.days_of_week?.[0] ?? -1));
+    setGroupDays(g === "new" ? [weekday] : [...(g.days_of_week ?? [])]);
   }
 
   async function saveGroup(e: React.FormEvent) {
     e.preventDefault();
     if (!groupName.trim()) return;
     setBusyGroup(true);
-    const changes = { title: groupName.trim(), days_of_week: groupDay === -1 ? null : [groupDay] };
+    const changes = { title: groupName.trim(), days_of_week: groupDays.length === 0 || groupDays.length === 7 ? null : groupDays };
     const res = editingGroup === "new"
       ? await supabase.from("routine_groups").insert({ ...changes, kind: "exercise", frequency: "daily", sort_order: groups.length * 10 + 100 })
       : await supabase.from("routine_groups").update(changes).eq("id", editingGroup!.id);
@@ -385,13 +385,18 @@ export function Workout({ day, today, groups: initialGroups, items: initialItems
       </Dialog>
       <Dialog open={editingGroup !== null} onOpenChange={(open) => { if (!open) setEditingGroup(null); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingGroup === "new" ? "Add workout day" : "Edit workout day"}</DialogTitle><DialogDescription>Set a day of the week for this workout group.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{editingGroup === "new" ? "Add workout day" : "Edit workout day"}</DialogTitle><DialogDescription>Choose all weekdays for this workout group. No selected days means every day.</DialogDescription></DialogHeader>
           <form onSubmit={saveGroup} className="grid gap-3">
             <Input aria-label="Workout day name" value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="e.g. Push" required maxLength={80} />
-            <select aria-label="Scheduled weekday" className="h-9 rounded-lg border bg-background px-2" value={groupDay} onChange={(e) => setGroupDay(Number(e.target.value))}>
-              <option value={-1}>Every day (optional)</option>
-              {WEEKDAY_SHORT.map((name, value) => <option key={value} value={value}>{name}</option>)}
-            </select>
+            <fieldset className="grid gap-2">
+              <legend className="mb-2 text-sm font-medium">Scheduled weekdays</legend>
+              <div className="flex flex-wrap gap-1.5">
+                {WEEKDAY_SHORT.map((name, value) => <Button key={value} type="button" size="sm"
+                  aria-label={`Schedule ${name}`} aria-pressed={groupDays.includes(value)}
+                  variant={groupDays.includes(value) ? "default" : "outline"}
+                  onClick={() => setGroupDays((days) => days.includes(value) ? days.filter((d) => d !== value) : [...days, value].sort())}>{name}</Button>)}
+              </div>
+            </fieldset>
             <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setEditingGroup(null)}>Cancel</Button><Button type="submit" disabled={busyGroup}><Check /> Save day</Button></div>
           </form>
         </DialogContent>
