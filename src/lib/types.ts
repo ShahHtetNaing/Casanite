@@ -8,6 +8,7 @@ export type ItemKind =
   | "diet";
 
 export type Frequency = "daily" | "weekly" | "monthly" | "yearly" | "once";
+export const GUIDED_ITEM_KINDS = new Set<ItemKind>(["exercise", "recovery"]);
 
 export const ITEM_KINDS: ItemKind[] = [
   "exercise",
@@ -69,6 +70,24 @@ export interface RoutineItem {
   is_trackable: boolean;
   sort_order: number;
   is_active: boolean;
+  workout_template: WorkoutSet[] | null;
+  workout_rest_seconds: number | null;
+}
+
+export interface WorkoutSet {
+  kg: number | null;
+  reps: number | null;
+  seconds: number | null;
+  completed: boolean;
+}
+
+export interface WorkoutSession {
+  id: string;
+  item_id: string | null;
+  exercise_name: string;
+  day: string;
+  sets: WorkoutSet[];
+  updated_at: string;
 }
 
 export interface Completion {

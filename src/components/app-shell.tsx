@@ -18,6 +18,7 @@ import {
   Sun,
   UserRound,
   UtensilsCrossed,
+  Dumbbell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RestTimer } from "@/components/rest-timer";
@@ -31,6 +32,7 @@ const NAV = [
   { href: "/shopping", label: "Things to Buy", icon: ShoppingCart },
   { href: "/mind", label: "Mind & Words", icon: Brain },
   { href: "/meals", label: "Meals", icon: UtensilsCrossed },
+  { href: "/workout", label: "Workout", icon: Dumbbell },
   { href: "/recipes", label: "Recipes", icon: ChefHat },
   { href: "/journal", label: "Journal", icon: BookOpen },
 ];

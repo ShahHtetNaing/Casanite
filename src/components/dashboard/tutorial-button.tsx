@@ -38,6 +38,9 @@ export function TutorialButton({
                 {[guide?.target, guide?.equipment].filter(Boolean).join(" · ") || "Form guide"}
               </DialogDescription>
             </DialogHeader>
+            {!guide?.cues?.length && guideUrl && (
+              <p className="text-sm text-muted-foreground">Use the exercise-specific Muscle &amp; Strength page for its technique instructions and demonstration video.</p>
+            )}
             {!!guide?.secondary?.length && (
               <p className="text-sm">
                 <span className="font-medium">Also works:</span> {guide.secondary.join(", ")}
