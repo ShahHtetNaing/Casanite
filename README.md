@@ -3,6 +3,7 @@
 Gamified personal health, fitness & productivity tracker. Next.js 15 (App Router) · Tailwind v4 · shadcn/ui · Supabase · Recharts · Google Fit & Calendar APIs. Runs entirely on free tiers (Vercel Hobby + Supabase Free + Google Cloud).
 
 ## Features
+- **Portfolio-inspired theme** from https://shahdev-delta.vercel.app/index.html: warm ivory/rust in light mode, charcoal/orange in dark mode, editorial headings, monospaced controls and bordered panels. Light remains the default; the existing theme toggle is preserved.
 - **Google-only login**, locked to `shahhtetnaing@gmail.com` (middleware + Postgres RLS on every table).
 - **RPG HUD**: Level, EXP bar (10 EXP per completed task, 100 EXP per level), daily streak (resets after a missed day). EXP/level/streak are computed in Postgres (`complete_item` / `uncomplete_item` / `recompute_user_stats`).
 - **Edit Mode**: add / edit / reorder / delete every group (gym day, habit list, goal set) and item (exercise, habit, diet rule, goal), including sets/reps, YouTube URL, schedule days, frequency (daily/weekly/monthly/yearly/once), times-per-period and target date.

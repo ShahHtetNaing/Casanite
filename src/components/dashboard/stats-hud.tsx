@@ -27,7 +27,7 @@ function Ring({ pct, color }: { pct: number; color: string }) {
 function Tile({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="neon-panel flex flex-col gap-3 p-4">
-      <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+      <p className="flex items-center gap-1.5 font-mono text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
         {icon}
         {label}
       </p>
@@ -43,9 +43,9 @@ export function StatsHud({ stats, questsDone, questsTotal }: { stats: UserStats;
 
   return (
     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Progress overview">
-      <Tile label="Level" icon={<Zap className="size-3.5 text-blue-500" />}>
+      <Tile label="Level" icon={<Zap className="size-3.5 text-primary" />}>
         <div className="flex items-end justify-between">
-          <p className="text-3xl font-semibold tracking-tight">Lv {stats.level}</p>
+          <p className="font-display text-4xl font-normal tracking-wide">Lv {stats.level}</p>
           <p className="text-xs text-muted-foreground">
             {intoLevel}/{EXP_PER_LEVEL} EXP
           </p>
@@ -62,10 +62,10 @@ export function StatsHud({ stats, questsDone, questsTotal }: { stats: UserStats;
         </div>
       </Tile>
 
-      <Tile label="Today's tasks" icon={<CheckCircle2 className="size-3.5 text-violet-500" />}>
+      <Tile label="Today's tasks" icon={<CheckCircle2 className="size-3.5 text-primary" />}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-3xl font-semibold tracking-tight">
+            <p className="font-display text-4xl font-normal tracking-wide">
               {questsDone}
               <span className="text-lg text-muted-foreground">/{questsTotal}</span>
             </p>
@@ -76,7 +76,7 @@ export function StatsHud({ stats, questsDone, questsTotal }: { stats: UserStats;
       </Tile>
 
       <Tile label="Streak" icon={<Flame className="size-3.5 text-amber-500" />}>
-        <p className="text-3xl font-semibold tracking-tight">
+        <p className="font-display text-4xl font-normal tracking-wide">
           {stats.streak} <span className="text-lg font-normal text-muted-foreground">days</span>
         </p>
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -85,7 +85,7 @@ export function StatsHud({ stats, questsDone, questsTotal }: { stats: UserStats;
       </Tile>
 
       <Tile label="Total EXP" icon={<Trophy className="size-3.5 text-emerald-500" />}>
-        <p className="text-3xl font-semibold tracking-tight">{stats.exp.toLocaleString()}</p>
+        <p className="font-display text-4xl font-normal tracking-wide">{stats.exp.toLocaleString()}</p>
         <p className="text-xs text-muted-foreground">{EXP_PER_LEVEL - intoLevel} EXP to level {stats.level + 1}</p>
       </Tile>
     </section>

@@ -24,9 +24,9 @@ export default async function LoginPage({
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-6">
       <div className="neon-panel w-full max-w-sm p-8">
-        <span className="brand-gradient grid size-11 place-items-center rounded-xl text-lg font-bold text-white">C</span>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight">Sign in to Casanite</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Health, fitness and productivity in one place.</p>
+        <p className="app-eyebrow">Private workspace</p>
+        <h1 className="app-title mt-5">Casanite</h1>
+        <p className="app-subtitle mt-3">Health, fitness and productivity in one place.</p>
         {error && (
           <p role="alert" className="mt-5 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-600 dark:text-rose-300">
             {ERRORS[error] ?? "Something went wrong."}
