@@ -1366,3 +1366,210 @@ begin
     execute format('grant execute on function %s to authenticated', f);
   end loop;
 end $$;
+
+-- v8: Workout sessions reuse the existing routine groups and items. A
+-- snapshot of the exercise name keeps dated sessions intelligible after edits.
+alter table public.routines_and_goals add column if not exists workout_template jsonb;
+alter table public.routines_and_goals add column if not exists workout_rest_seconds integer default 90
+  check (workout_rest_seconds between 30 and 600);
+
+create or replace function public.valid_workout_sets(p_sets jsonb)
+returns boolean language plpgsql immutable as $$
+declare v jsonb; k text; n numeric;
+begin
+  if p_sets is null or jsonb_typeof(p_sets) <> 'array' or jsonb_array_length(p_sets) not between 1 and 12 then
+    return false;
+  end if;
+  for v in select value from jsonb_array_elements(p_sets) loop
+    if jsonb_typeof(v) <> 'object' or jsonb_typeof(v->'completed') <> 'boolean' then return false; end if;
+    foreach k in array array['kg', 'reps', 'seconds'] loop
+      if v ? k and jsonb_typeof(v->k) not in ('null', 'number') then return false; end if;
+      if jsonb_typeof(v->k) = 'number' then
+        n := (v->>k)::numeric;
+        if n < 0 or (k = 'kg' and (n > 1000 or n * 4 <> trunc(n * 4)))
+          or (k = 'reps' and (n > 500 or n <> trunc(n)))
+          or (k = 'seconds' and (n > 36000 or n <> trunc(n))) then return false; end if;
+      end if;
+    end loop;
+    if v->>'completed' = 'true' and coalesce((v->>'reps')::integer, 0) = 0
+       and coalesce((v->>'seconds')::integer, 0) = 0 then return false; end if;
+  end loop;
+  return true;
+exception when others then return false;
+end;
+$$;
+
+alter table public.routines_and_goals drop constraint if exists routines_workout_template_valid;
+alter table public.routines_and_goals add constraint routines_workout_template_valid
+  check (workout_template is null or public.valid_workout_sets(workout_template));
+
+create table if not exists public.workout_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  item_id uuid references public.routines_and_goals(id) on delete set null,
+  exercise_name text not null check (length(btrim(exercise_name)) between 1 and 150),
+  day date not null default public.app_today() check (day <= public.app_today()),
+  sets jsonb not null check (public.valid_workout_sets(sets)),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, item_id, day)
+);
+create index if not exists workout_sessions_user_day on public.workout_sessions(user_id, day desc);
+create index if not exists workout_sessions_previous on public.workout_sessions(user_id, item_id, day desc);
+
+create or replace function public.workout_previous(p_day date)
+returns setof public.workout_sessions language sql stable as $$
+  select distinct on (s.item_id) s.* from public.workout_sessions s
+  where s.user_id = auth.uid() and public.is_owner() and s.item_id is not null and s.day < p_day
+  order by s.item_id, s.day desc
+$$;
+
+create or replace function public.workout_session_item_guard()
+returns trigger language plpgsql as $$
+begin
+  if new.item_id is null or not exists (
+    select 1 from public.routines_and_goals i
+    join public.routine_groups g on g.id = i.group_id
+    where i.id = new.item_id and i.user_id = new.user_id and g.user_id = new.user_id
+      and g.kind = 'exercise' and i.is_active and g.is_active
+  ) then raise exception 'active workout exercise required' using errcode = '23514'; end if;
+  new.exercise_name := (select title from public.routines_and_goals where id = new.item_id);
+  return new;
+end;
+$$;
+drop trigger if exists workout_session_item_guard on public.workout_sessions;
+create trigger workout_session_item_guard before insert or update on public.workout_sessions
+  for each row execute function public.workout_session_item_guard();
+drop trigger if exists workout_sessions_touch on public.workout_sessions;
+create trigger workout_sessions_touch before update on public.workout_sessions
+  for each row execute function public.touch_updated_at();
+
+alter table public.workout_sessions enable row level security;
+alter table public.workout_sessions force row level security;
+revoke all on public.workout_sessions from anon;
+grant select, insert, update, delete on public.workout_sessions to authenticated;
+drop policy if exists owner_only on public.workout_sessions;
+create policy owner_only on public.workout_sessions for all to authenticated
+  using (user_id = auth.uid() and public.is_owner())
+  with check (user_id = auth.uid() and public.is_owner());
+
+-- Dashboard Edit Mode also edits routines_and_goals; never carry old form
+-- guidance, video or set targets across a title change through that path.
+create or replace function public.clear_stale_exercise_guide()
+returns trigger language plpgsql as $$
+begin
+  if new.title is distinct from old.title then
+    if new.guide_url is not distinct from old.guide_url then new.guide_url := null; end if;
+    if new.guide is not distinct from old.guide then new.guide := null; end if;
+    if new.youtube_url is not distinct from old.youtube_url then new.youtube_url := null; end if;
+    if new.workout_template is not distinct from old.workout_template then new.workout_template := null; end if;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists clear_stale_exercise_guide on public.routines_and_goals;
+create trigger clear_stale_exercise_guide before update of title on public.routines_and_goals
+  for each row execute function public.clear_stale_exercise_guide();
+
+-- A changed movement gets a new item ID so its previous logs and EXP remain
+-- attached to the old exercise. Prescriptions are editable independently.
+create or replace function public.save_workout_exercise(
+  p_id uuid, p_group uuid, p_title text, p_notes text, p_sets jsonb,
+  p_guide_url text, p_guide jsonb, p_rest_seconds integer
+) returns uuid language plpgsql as $$
+declare old_item public.routines_and_goals; v_id uuid; v_order integer;
+begin
+  if not public.is_owner() or not exists (
+    select 1 from public.routine_groups where id = p_group and user_id = auth.uid()
+      and kind = 'exercise' and is_active
+  ) then raise exception 'not authorized' using errcode = '42501'; end if;
+  if p_title is null or length(btrim(p_title)) not between 1 and 150 or not public.valid_workout_sets(p_sets)
+     or p_rest_seconds is null or p_rest_seconds not between 30 and 600
+     or length(coalesce(p_notes, '')) > 1000
+     or (p_guide_url is not null and p_guide_url !~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+\.html$')
+  then raise exception 'invalid exercise' using errcode = '22023'; end if;
+  if p_id is not null then
+    select * into old_item from public.routines_and_goals
+      where id = p_id and user_id = auth.uid() and is_active for update;
+    if old_item.id is null or not exists (
+      select 1 from public.routine_groups where id = old_item.group_id
+        and kind = 'exercise' and user_id = auth.uid()
+    ) then raise exception 'exercise not found' using errcode = '22023'; end if;
+    v_order := old_item.sort_order;
+    if old_item.title = btrim(p_title) and old_item.group_id = p_group then
+      update public.routines_and_goals set group_id = p_group, notes = p_notes,
+        workout_template = p_sets, workout_rest_seconds = p_rest_seconds,
+        details = jsonb_array_length(p_sets)::text || ' sets',
+        guide_url = p_guide_url, guide = p_guide
+      where id = p_id;
+      return p_id;
+    end if;
+    update public.routines_and_goals set is_active = false where id = p_id;
+  else
+    select coalesce(max(sort_order) + 10, 10) into v_order
+      from public.routines_and_goals where group_id = p_group;
+  end if;
+  insert into public.routines_and_goals
+    (user_id, group_id, title, details, notes, workout_template, workout_rest_seconds, guide_url, guide,
+     sort_order, target_count, is_trackable)
+  values (auth.uid(), p_group, btrim(p_title), jsonb_array_length(p_sets)::text || ' sets',
+    p_notes, p_sets, p_rest_seconds, p_guide_url, p_guide, v_order, 1, true)
+  returning id into v_id;
+  return v_id;
+end;
+$$;
+
+-- Explicit one-time install. Archive prior exercise groups, never delete them
+-- or their completion history; non-exercise groups remain untouched.
+create or replace function public.install_workout_plan(p_plan jsonb)
+returns void language plpgsql as $$
+declare grp jsonb; ex jsonb; gid uuid; v_day smallint;
+begin
+  if not public.is_owner() then raise exception 'not authorized' using errcode = '42501'; end if;
+  if p_plan is null or jsonb_typeof(p_plan) <> 'array' or jsonb_array_length(p_plan) <> 7 then
+    raise exception 'invalid plan' using errcode = '22023'; end if;
+  insert into public.seed_flags (user_id, name) values (auth.uid(), 'workout_plan') on conflict do nothing;
+  if not found then raise exception 'starter plan already installed; edit individual days instead' using errcode = '22023'; end if;
+  update public.routine_groups set is_active = false where user_id = auth.uid() and kind = 'exercise';
+  for grp in select value from jsonb_array_elements(p_plan) loop
+    v_day := (grp->>'day')::smallint;
+    if (v_day is not null and v_day not in (0,1,2,3,4,6))
+       or length(btrim(grp->>'title')) not between 1 and 80
+       or jsonb_typeof(grp->'items') <> 'array' or jsonb_array_length(grp->'items') not between 1 and 8
+    then raise exception 'invalid plan day' using errcode = '22023'; end if;
+    insert into public.routine_groups (user_id, title, description, kind, frequency, days_of_week, color, sort_order)
+    values (auth.uid(), grp->>'title', grp->>'description', 'exercise', 'daily',
+      case when v_day is null then null::smallint[] else array[v_day] end,
+      case v_day when 0 then 'sky' when 1 then 'fuchsia' when 2 then 'violet'
+        when 3 then 'lime' when 4 then 'amber' else 'cyan' end, coalesce(v_day * 10, 70))
+    returning id into gid;
+    for ex in select value from jsonb_array_elements(grp->'items') loop
+      if length(btrim(ex->>'title')) not between 1 and 150
+         or not public.valid_workout_sets(ex->'sets')
+         or ((ex->>'guide_url') is not null and (ex->>'guide_url') !~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+\.html$')
+      then raise exception 'invalid plan exercise' using errcode = '22023'; end if;
+      insert into public.routines_and_goals
+        (user_id, group_id, title, details, notes, guide_url, guide, workout_template, sort_order, is_trackable)
+      values (auth.uid(), gid, ex->>'title', jsonb_array_length(ex->'sets')::text || ' sets',
+        ex->>'notes', ex->>'guide_url', ex->'guide', ex->'sets',
+        (select count(*) * 10 from public.routines_and_goals where group_id = gid),
+        v_day is not null and v_day <> 0);
+    end loop;
+  end loop;
+end;
+$$;
+
+do $$
+declare f text;
+begin
+  foreach f in array array[
+    'public.valid_workout_sets(jsonb)', 'public.workout_session_item_guard()',
+    'public.clear_stale_exercise_guide()',
+    'public.workout_previous(date)',
+    'public.save_workout_exercise(uuid, uuid, text, text, jsonb, text, jsonb, integer)',
+    'public.install_workout_plan(jsonb)'
+  ] loop
+    execute format('revoke all on function %s from public, anon', f);
+    execute format('grant execute on function %s to authenticated', f);
+  end loop;
+end $$;

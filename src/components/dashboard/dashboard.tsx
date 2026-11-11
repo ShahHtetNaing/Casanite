@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/lib/supabase/client";
 import { EXP_PER_TASK } from "@/lib/config";
 import { loadDashboardData, type DashboardData } from "@/lib/dashboard-data";
+import { workoutGuideFor } from "@/lib/workout-plan";
 import { WEEKDAY_SHORT, effectiveFrequency, isScheduledOn, periodKey, zonedParts } from "@/lib/date";
 import type { CalendarSummary, HealthLog, RoutineGroup, RoutineItem, UserStats } from "@/lib/types";
 import { CalendarWidget } from "./calendar-widget";
@@ -198,7 +199,15 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
   async function saveItem(values: ItemFormValues) {
     const existing = itemDialog.item;
     if (existing) {
-      await mutate(() => supabase.from("routines_and_goals").update(values).eq("id", existing.id), "Item updated");
+      const changed = existing.title !== values.title;
+      const matched = changed ? workoutGuideFor(values.title) : null;
+      await mutate(() => supabase.from("routines_and_goals").update(changed ? {
+        ...values,
+        guide_url: values.guide_url !== existing.guide_url ? values.guide_url : matched!.guide_url,
+        guide: values.guide_url !== existing.guide_url ? null : matched!.guide,
+        youtube_url: values.youtube_url !== existing.youtube_url ? values.youtube_url : null,
+        notes: values.notes !== existing.notes ? values.notes : null,
+      } : values).eq("id", existing.id), "Item updated");
     } else {
       const siblings = itemsByGroup.get(values.group_id) ?? [];
       const sort_order = Math.max(0, ...siblings.map((s) => s.sort_order)) + 10;

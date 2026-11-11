@@ -5,8 +5,9 @@ Gamified personal health, fitness & productivity tracker. Next.js 15 (App Router
 ## Features
 - **Google-only login**, locked to `shahhtetnaing@gmail.com` (middleware + Postgres RLS on every table).
 - **RPG HUD**: Level, EXP bar (10 EXP per completed task, 100 EXP per level), daily streak (resets after a missed day). EXP/level/streak are computed in Postgres (`complete_item` / `uncomplete_item` / `recompute_user_stats`).
-- **Edit Mode**: add / edit / reorder / delete every group (gym day, habit list, goal set) and item (exercise, habit, diet rule, goal), including sets/reps, YouTube URL, schedule days, frequency (daily/weekly/monthly/yearly/once), times-per-period and target date.
-- **Today view**: daily flexibility + today's gym day + habits/hygiene/academic, with YouTube **Tutorial** buttons.
+- **Edit Mode**: add / edit / reorder / delete every group (gym day, habit list, goal set) and item (exercise, habit, diet rule, goal), including sets/reps, exercise guide URL, schedule days, frequency (daily/weekly/monthly/yearly/once), times-per-period and target date.
+- **Today view**: daily flexibility + today's gym day + habits/hygiene/academic, with Muscle & Strength form **Guide** buttons.
+- **Workout** (`/workout`): the active exercise groups from the dashboard, by day, with editable kg/reps/seconds per set, previous-session values, a persistent stopwatch, and add/edit/archive actions for days and exercises. Changing an exercise refreshes its M&S page/video and form guidance; a past set log keeps the original exercise name. Preview the conservative, opt-in starter plan before applying it: installation archives old exercise groups without deleting them or their history. Existing non-exercise routines are untouched. Log set completions separately from Dashboard quest EXP.
 - **Goals** (monthly / yearly), **Diet rules** widget, **Health** tab (weight, BMI, BP, heart rate — with charts and full CRUD).
 - **Character Sheet** (`/character`): RPG "About Me" page with education, age, experience, certificates, volunteer work, projects and awards, seeded from https://mysite2024.s3.us-east-1.amazonaws.com/index.html. Edit Mode gives full CRUD. Routine items with a *career category* (project/certificate) create or update a career entry automatically when you complete them.
 - **AI Career Consultant** (Groq): rarity score for your skill mix at your age, strengths, improvements, next IT/cybersecurity certs, project ideas, plus a chat box.
@@ -39,6 +40,7 @@ npx shadcn@latest add card progress badge dialog input label textarea select swi
 5. **Authentication → Providers → Google**: enable and paste the Google client ID/secret from step 3.
 
 Seed data (your full routine) is inserted automatically the first time you open the dashboard (`public.bootstrap_owner()`).
+Run the updated schema before opening the Workout page. The starter plan is **never applied automatically**; choose **Preview starter plan** then **Apply plan to my workouts**. If 5 activity days are too much, skip Saturday, shorten sessions, or use the linked 3-day M&S alternative. No prescribed starting kg or insulin adjustment is provided. Because the owner uses insulin, follow your clinician's glucose/exercise plan; don't swim alone or practise flips without a qualified coach and mats.
 
 ## 3. Google Cloud (free)
 1. https://console.cloud.google.com → new project.
@@ -79,7 +81,8 @@ Deploy free on Vercel: import the repo, add the same env vars, then add the Verc
 | `user_stats` | level, exp, streak, longest_streak, last_active_date |
 | `health_logs` | (Evolt scans auto-create/update a linked row via `evolt_scan_id`) weight_kg, height_cm, **bmi** (generated), systolic, diastolic, heart_rate, notes |
 | `routine_groups` | editable blocks: title, kind, frequency, days_of_week (0=Sun), color, order |
-| `routines_and_goals` | editable items: title, details (sets/reps), **youtube_url**, notes, frequency/days override, target_count, target_date, is_trackable |
+| `routines_and_goals` | editable items: title, details, `guide_url`/`guide`, `workout_template`/`workout_rest_seconds`, notes, frequency/days override, target_count, target_date, is_trackable |
+| `workout_sessions` | owner-only dated set logs with kg/reps/seconds/done and an exercise-name snapshot; historical logs survive exercise edits/removal |
 | `completions` | one row per completion (10 EXP), keyed by period (day/ISO week/month/year/once) |
 | `google_tokens` | Google refresh token captured at sign-in |
 | `profile` | name, birth date, headline, location, skills (Character Sheet header) |
@@ -104,4 +107,6 @@ src/app/api/evolt/analyze         PDF text extraction (unpdf) + Groq exercise su
 src/lib/ai.ts                     server-only Groq (OpenAI-compatible) helper
 src/lib/google/                   Fit + Calendar clients
 src/components/dashboard/         HUD, Edit Mode dialogs, widgets, health charts
+src/app/workout/                   owner-only workout day and set log
+src/lib/workout-plan.ts            explicit starter plan and exercise-guide matching
 ```
