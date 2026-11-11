@@ -69,6 +69,7 @@ export function TutorialButton({
         </Button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+            <div className="space-y-4">
             <DialogHeader>
               <DialogTitle>{title}</DialogTitle>
               <DialogDescription>
@@ -76,8 +77,8 @@ export function TutorialButton({
               </DialogDescription>
             </DialogHeader>
             {guide?.description && <p className="text-sm text-muted-foreground">{guide.description}</p>}
-            {open && video && <div className="aspect-video overflow-hidden rounded-xl border bg-black">
-              <iframe src={video} title={`${title} exercise demonstration`} className="h-full w-full"
+            {open && video && <div className="relative aspect-video w-full overflow-hidden rounded-xl border bg-black">
+              <iframe src={video} title={`${title} exercise demonstration`} className="absolute inset-0 h-full w-full border-0"
                 allow="encrypted-media; fullscreen; picture-in-picture" allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin" />
             </div>}
@@ -113,6 +114,7 @@ export function TutorialButton({
             {video && <a href={videoWatchUrl(video)!} target="_blank" rel="noopener noreferrer"
               className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full")}><ExternalLink className="size-3.5" /> Open video on its provider</a>}
             {video && <p className="text-xs text-muted-foreground">Press play to watch. If the provider blocks playback here, open its official guide above. Stop if an exercise causes pain.</p>}
+            </div>
           </DialogContent>
         </Dialog>
       </>
