@@ -1465,7 +1465,7 @@ create or replace function public.clear_stale_exercise_guide()
 returns trigger language plpgsql as $$
 begin
   if new.title is distinct from old.title and exists (
-    select 1 from public.routine_groups where id in (old.group_id, new.group_id) and kind = 'exercise'
+    select 1 from public.routine_groups where id in (old.group_id, new.group_id) and kind in ('exercise', 'recovery')
   ) then
     if new.guide_url is not distinct from old.guide_url then new.guide_url := null; end if;
     if new.guide is not distinct from old.guide then new.guide := null; end if;

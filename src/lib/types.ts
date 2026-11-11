@@ -8,6 +8,7 @@ export type ItemKind =
   | "diet";
 
 export type Frequency = "daily" | "weekly" | "monthly" | "yearly" | "once";
+export const GUIDED_ITEM_KINDS = new Set<ItemKind>(["exercise", "recovery"]);
 
 export const ITEM_KINDS: ItemKind[] = [
   "exercise",

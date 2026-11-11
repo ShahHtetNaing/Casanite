@@ -14,7 +14,7 @@ import { EXP_PER_TASK } from "@/lib/config";
 import { loadDashboardData, type DashboardData } from "@/lib/dashboard-data";
 import { workoutGuideFor } from "@/lib/workout-plan";
 import { WEEKDAY_SHORT, effectiveFrequency, isScheduledOn, periodKey, zonedParts } from "@/lib/date";
-import type { CalendarSummary, HealthLog, RoutineGroup, RoutineItem, UserStats } from "@/lib/types";
+import { GUIDED_ITEM_KINDS, type CalendarSummary, type HealthLog, type RoutineGroup, type RoutineItem, type UserStats } from "@/lib/types";
 import { CalendarWidget } from "./calendar-widget";
 import { GroupDialog, ItemDialog, type GroupFormValues, type ItemFormValues } from "./edit-dialogs";
 import { FitWidget } from "./fit-widget";
@@ -200,15 +200,17 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
     const existing = itemDialog.item;
     if (existing) {
       const workout = groupById.get(existing.group_id)?.kind === "exercise" || groupById.get(values.group_id)?.kind === "exercise";
-      const changed = existing.title !== values.title && workout;
+      const guided = [groupById.get(existing.group_id)?.kind, groupById.get(values.group_id)?.kind]
+        .some((kind) => kind != null && GUIDED_ITEM_KINDS.has(kind));
+      const changed = existing.title !== values.title && guided;
       const matched = changed ? workoutGuideFor(values.title) : null;
       const changes = changed ? {
         ...values,
         guide_url: values.guide_url !== existing.guide_url ? values.guide_url : matched!.guide_url,
         guide: values.guide_url !== existing.guide_url ? null : matched!.guide,
         youtube_url: values.youtube_url !== existing.youtube_url ? values.youtube_url : null,
-        notes: values.notes !== existing.notes ? values.notes : null,
-        details: values.details !== existing.details ? values.details : null,
+        notes: workout && values.notes === existing.notes ? null : values.notes,
+        details: workout && values.details === existing.details ? null : values.details,
       } : values;
       if (workout && (changed || existing.group_id !== values.group_id)) {
         await mutate(() => supabase.rpc("replace_workout_routine", { p_item: existing.id, p_changes: changes }), "Exercise replaced; past logs kept");
@@ -218,7 +220,8 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
     } else {
       const siblings = itemsByGroup.get(values.group_id) ?? [];
       const sort_order = Math.max(0, ...siblings.map((s) => s.sort_order)) + 10;
-      const matched = groupById.get(values.group_id)?.kind === "exercise" ? workoutGuideFor(values.title) : null;
+      const kind = groupById.get(values.group_id)?.kind;
+      const matched = kind && GUIDED_ITEM_KINDS.has(kind) ? workoutGuideFor(values.title) : null;
       await mutate(() => supabase.from("routines_and_goals").insert({ ...values, sort_order,
         ...(matched ? { guide_url: values.guide_url ?? matched.guide_url, guide: values.guide_url ? null : matched.guide } : {}),
       }), "Item added");

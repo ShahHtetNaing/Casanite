@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { effectiveDays, effectiveFrequency, formatDays } from "@/lib/date";
-import type { RoutineGroup, RoutineItem } from "@/lib/types";
+import { GUIDED_ITEM_KINDS, type RoutineGroup, type RoutineItem } from "@/lib/types";
 import { colorStyle } from "./colors";
 import { TutorialButton } from "./tutorial-button";
 
@@ -21,8 +21,6 @@ export interface RoutineHandlers {
   deleteGroup: (group: RoutineGroup) => void;
   moveGroup: (group: RoutineGroup, dir: -1 | 1) => void;
 }
-
-const SHOW_TUTORIAL_KINDS = new Set(["exercise", "recovery"]);
 
 function IconButton({
   label,
@@ -128,7 +126,7 @@ export function ItemRow({
         )}
       </div>
 
-      {(SHOW_TUTORIAL_KINDS.has(group.kind) || item.youtube_url || item.guide_url || item.guide) && (
+      {(GUIDED_ITEM_KINDS.has(group.kind) || item.youtube_url || item.guide_url || item.guide) && (
         <TutorialButton url={item.youtube_url} title={item.title} guideUrl={item.guide_url} guide={item.guide} />
       )}
 
