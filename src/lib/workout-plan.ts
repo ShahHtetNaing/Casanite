@@ -57,8 +57,8 @@ export const STARTER_PLAN = [
     prescription("Bodyweight Standing Calf Raise", 12, "12–15 reps; hold a rail for balance."),
   ] },
   { day: 4, title: "Core + easy cardio", description: "Easy cardio 10–20 min at conversational pace", items: [
-    prescription("Plank", null, "15–25 seconds; knees down is fine.", 2, 20),
-    prescription("Side Plank", null, "10–20 seconds per side; knee down is fine.", 2, 15),
+    prescription("Plank", null, "15–25 seconds; knees down is fine.", 1, 20),
+    prescription("Side Plank", null, "10–20 seconds per side; knee down is fine.", 1, 15),
     { title: "Easy walking or cycling", notes: "10–20 easy minutes; conversational pace. Record seconds or use the rest timer.",
       guide_url: null, guide: { target: "Cardiorespiratory fitness", equipment: "Walking or stationary bike", cues: ["Start at a pace where you can speak in sentences.", "Build duration gradually, not speed.", "Cool down at an easy pace."], tip: "Follow your clinician's glucose plan around exercise." },
       sets: [{ kg: null, reps: null, seconds: 600, completed: false }] },
