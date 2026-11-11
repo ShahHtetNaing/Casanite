@@ -199,20 +199,29 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
   async function saveItem(values: ItemFormValues) {
     const existing = itemDialog.item;
     if (existing) {
-      const changed = existing.title !== values.title &&
-        (groupById.get(existing.group_id)?.kind === "exercise" || groupById.get(values.group_id)?.kind === "exercise");
+      const workout = groupById.get(existing.group_id)?.kind === "exercise" || groupById.get(values.group_id)?.kind === "exercise";
+      const changed = existing.title !== values.title && workout;
       const matched = changed ? workoutGuideFor(values.title) : null;
-      await mutate(() => supabase.from("routines_and_goals").update(changed ? {
+      const changes = changed ? {
         ...values,
         guide_url: values.guide_url !== existing.guide_url ? values.guide_url : matched!.guide_url,
         guide: values.guide_url !== existing.guide_url ? null : matched!.guide,
         youtube_url: values.youtube_url !== existing.youtube_url ? values.youtube_url : null,
         notes: values.notes !== existing.notes ? values.notes : null,
-      } : values).eq("id", existing.id), "Item updated");
+        details: values.details !== existing.details ? values.details : null,
+      } : values;
+      if (workout && (changed || existing.group_id !== values.group_id)) {
+        await mutate(() => supabase.rpc("replace_workout_routine", { p_item: existing.id, p_changes: changes }), "Exercise replaced; past logs kept");
+      } else {
+        await mutate(() => supabase.from("routines_and_goals").update(changes).eq("id", existing.id), "Item updated");
+      }
     } else {
       const siblings = itemsByGroup.get(values.group_id) ?? [];
       const sort_order = Math.max(0, ...siblings.map((s) => s.sort_order)) + 10;
-      await mutate(() => supabase.from("routines_and_goals").insert({ ...values, sort_order }), "Item added");
+      const matched = groupById.get(values.group_id)?.kind === "exercise" ? workoutGuideFor(values.title) : null;
+      await mutate(() => supabase.from("routines_and_goals").insert({ ...values, sort_order,
+        ...(matched ? { guide_url: values.guide_url ?? matched.guide_url, guide: values.guide_url ? null : matched.guide } : {}),
+      }), "Item added");
     }
     setItemDialog({ open: false, item: null, groupId: null });
   }

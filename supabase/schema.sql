@@ -1527,8 +1527,32 @@ begin
 end;
 $$;
 
--- Explicit one-time install. Archive prior exercise groups, never delete them
--- or their completion history; non-exercise groups remain untouched.
+-- Dashboard Edit Mode has more fields than Workout's editor; preserve them
+-- when replacing an exercise, but never reuse the old session key.
+create or replace function public.replace_workout_routine(p_item uuid, p_changes jsonb)
+returns uuid language plpgsql as $$
+declare old_item public.routines_and_goals; new_item public.routines_and_goals;
+begin
+  if not public.is_owner() then raise exception 'not authorized' using errcode = '42501'; end if;
+  if p_changes is null or jsonb_typeof(p_changes) <> 'object' then raise exception 'invalid item changes' using errcode = '22023'; end if;
+  select * into old_item from public.routines_and_goals where id = p_item and user_id = auth.uid() for update;
+  if old_item.id is null then raise exception 'item not found' using errcode = '22023'; end if;
+  new_item := jsonb_populate_record(old_item, p_changes - array['id', 'user_id', 'created_at', 'updated_at']);
+  if not exists (select 1 from public.routine_groups where id = new_item.group_id and user_id = auth.uid())
+    or not exists (select 1 from public.routine_groups where id in (old_item.group_id, new_item.group_id) and user_id = auth.uid() and kind = 'exercise')
+  then raise exception 'workout group required' using errcode = '22023'; end if;
+  new_item.id := gen_random_uuid();
+  new_item.user_id := auth.uid();
+  new_item.created_at := now();
+  new_item.updated_at := now();
+  if new_item.title is distinct from old_item.title then new_item.workout_template := null; end if;
+  update public.routines_and_goals set is_active = false where id = old_item.id;
+  insert into public.routines_and_goals select (new_item).*;
+  return new_item.id;
+end;
+$$;
+
+-- Explicit one-time install, retaining all prior history and other routines.
 create or replace function public.install_workout_plan(p_plan jsonb)
 returns void language plpgsql as $$
 declare grp jsonb; ex jsonb; gid uuid; v_day smallint;
@@ -1575,6 +1599,7 @@ begin
     'public.clear_stale_exercise_guide()',
     'public.workout_previous(date)',
     'public.save_workout_exercise(uuid, uuid, text, text, jsonb, text, jsonb, integer)',
+    'public.replace_workout_routine(uuid, jsonb)',
     'public.install_workout_plan(jsonb)'
   ] loop
     execute format('revoke all on function %s from public, anon', f);
