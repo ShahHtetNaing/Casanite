@@ -199,7 +199,8 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
   async function saveItem(values: ItemFormValues) {
     const existing = itemDialog.item;
     if (existing) {
-      const changed = existing.title !== values.title;
+      const changed = existing.title !== values.title &&
+        (groupById.get(existing.group_id)?.kind === "exercise" || groupById.get(values.group_id)?.kind === "exercise");
       const matched = changed ? workoutGuideFor(values.title) : null;
       await mutate(() => supabase.from("routines_and_goals").update(changed ? {
         ...values,
