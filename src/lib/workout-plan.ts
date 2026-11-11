@@ -1,5 +1,6 @@
-import catalog from "./ms-exercises.json";
+import { catalogExercise, exerciseSourceUrl, EXERCISE_VIDEOS, MS_CATALOG } from "./exercise-catalog";
 import type { ExerciseGuide, WorkoutSet } from "./types";
+import { ACTIVITY_GUIDES, activityGuideFor } from "./activity-guides";
 
 type GuideInfo = { target: string; secondary: string[]; equipment: string; cues: string[]; tip?: string };
 const GUIDES: Record<string, GuideInfo> = {
@@ -18,15 +19,38 @@ const GUIDES: Record<string, GuideInfo> = {
   "bodyweight-standing-calf-raise": { target: "Calves", secondary: [], equipment: "Bodyweight, sturdy support", cues: ["Stand tall holding a rail for balance.", "Rise onto the balls of your feet and pause.", "Lower your heels with control."], tip: "Use a flat floor until you are comfortable on a step." },
   hover: { target: "Abs", secondary: ["Lower back"], equipment: "Bodyweight", cues: ["Set elbows under shoulders with forearms flat.", "Brace your belly and glutes, keeping one long line from head to feet.", "Breathe slowly without letting your hips sag."], tip: "Knees down is a valid easier variation." },
   "side-hover": { target: "Obliques", secondary: ["Abs"], equipment: "Bodyweight", cues: ["Set one forearm under your shoulder and stack your hips.", "Lift the hips into a straight line and breathe.", "Hold the same time on each side."], tip: "Keep the lower knee on the floor as a beginner modification." },
+  "dumbbell-bench-press": { target: "Chest", secondary: ["Shoulders", "Triceps"], equipment: "Dumbbells, flat bench", cues: ["Lie on a stable bench with feet planted and weights beside your chest.", "Press upward without bouncing or lifting your shoulders off the bench.", "Lower with control to a comfortable depth."], tip: "Ask a trainer to demonstrate getting the weights into and out of position." },
+  "incline-dumbbell-curl": { target: "Biceps", secondary: ["Forearms"], equipment: "Dumbbells, incline bench", cues: ["Sit against an inclined backrest with light weights hanging at your sides.", "Bend your elbows while keeping the upper arms quiet.", "Lower slowly without forcing your shoulders into a stretch."], tip: "Use a smaller range or a standing curl if your shoulders are uncomfortable." },
+  "hanging-knee-raise": { target: "Abs", secondary: ["Hip flexors"], equipment: "Secure overhead bar", cues: ["Hold a secure bar with a stable grip and no swinging.", "Bend your knees and draw them toward your torso while gently curling the pelvis.", "Lower slowly and reset before the next repetition."], tip: "This is a later progression; use floor-based core work until you can hang comfortably." },
+  "high-inverted-row": { target: "Upper back", secondary: ["Biceps", "Rear shoulders"], equipment: "Secure fixed bar", cues: ["Grip a firmly secured bar and lean back with your body in one straight line.", "Pull your chest toward the bar without jutting your head forward.", "Straighten the arms slowly, keeping the body steady."], tip: "Start with a high bar and a more upright body angle." },
+  "russian-twist": { target: "Abs", secondary: ["Obliques"], equipment: "Bodyweight", cues: ["Sit tall with knees bent and feet supported on the floor.", "Turn your upper body gently from side to side without rounding your lower back.", "Keep the motion small and controlled while breathing."], tip: "Start without a weight; choose a plank if rotation bothers your back." },
+  "abdominal-air-bike": { target: "Abs", secondary: ["Obliques"], equipment: "Bodyweight", cues: ["Lie on your back with knees bent and hands lightly supporting the head.", "Rotate one shoulder toward the opposite knee while extending the other leg comfortably.", "Alternate slowly without pulling on your neck."], tip: "Keep the lower back supported and shorten the leg extension when needed." },
+  "hollow-body-hold": { target: "Abs", secondary: [], equipment: "Bodyweight", cues: ["Lie on your back and gently press the lower back toward the floor.", "Reach the arms and legs only as far as you can without arching your back.", "Hold while breathing; reset as soon as you lose the position."], tip: "An intermediate progression: bend the knees or use a dead bug first." },
+  "cable-face-pull": { target: "Rear shoulders", secondary: ["Upper back"], equipment: "Cable, rope", cues: ["Set the rope around face height and stand balanced with a light load.", "Draw the rope toward your face with elbows wide, keeping your head still.", "Return slowly without leaning back or shrugging."], tip: "Keep this a controlled technique exercise, not a heavy pull." },
+  "cable-face-pull-with-external-rotation": { target: "Rear shoulders", secondary: ["Upper back", "Rotator cuff"], equipment: "Cable, rope", cues: ["Face the cable with the rope set around face height.", "Pull toward your face and rotate the forearms upward within a comfortable range.", "Reverse slowly, keeping the torso steady and neck relaxed."], tip: "Use very light resistance and avoid any painful shoulder range." },
+  "seated-leg-curl": { target: "Hamstrings", secondary: [], equipment: "Seated leg curl machine", cues: ["Adjust the backrest and pads so your knees align with the machine pivot.", "Keep your thighs supported as you bend the knees to curl the pad downward.", "Return slowly without bouncing or lifting off the seat."], tip: "Ask gym staff to fit the machine to your leg length." },
+  "half-kneeling-quad-stretch": { target: "Quads", secondary: ["Hip flexors"], equipment: "Bodyweight, knee padding", cues: ["Kneel on a padded surface in a supported half-kneeling stance.", "Bend the rear knee and hold the rear foot only if you can stay balanced comfortably.", "Keep your torso tall and ease into a gentle front-thigh stretch, then switch sides."], tip: "Do not force the knee or pull hard on the foot; use an easier supported stretch if needed." },
 };
 
-const CATALOG = new Map((catalog as [string, string][]).map(([name, slug]) => [name.toLowerCase(), slug]));
-export const EXERCISE_NAMES = (catalog as [string, string][]).map(([name]) => name);
+export const EXERCISE_NAMES = [...MS_CATALOG.map(([name]) => name), ...Object.keys(ACTIVITY_GUIDES)];
 
 export function workoutGuideFor(title: string): { guide_url: string | null; guide: ExerciseGuide | null } {
-  const slug = CATALOG.get(title.trim().toLowerCase());
-  if (!slug) return { guide_url: null, guide: null };
-  return { guide_url: `https://www.muscleandstrength.com/exercises/${slug}.html`, guide: GUIDES[slug] ?? null };
+  const activity = activityGuideFor(title);
+  if (activity) return { guide_url: null, guide: activity };
+  const match = catalogExercise(title);
+  if (!match) return { guide_url: null, guide: null };
+  const source = exerciseSourceUrl(match.slug);
+  const video = EXERCISE_VIDEOS[match.slug]?.video_url;
+  const cues = GUIDES[match.slug];
+  return {
+    guide_url: source,
+    guide: cues || video ? {
+      ...cues,
+      description: `${match.name}: review the demonstration and use a comfortable, controlled range of motion.`,
+      source_url: source,
+      ...(video ? { video_url: video } : {}),
+    } : null,
+  };
 }
 
 const prescription = (title: string, reps: number | null, notes: string, sets = 1, seconds: number | null = null) => ({
@@ -59,8 +83,8 @@ export const STARTER_PLAN = [
   { day: 4, title: "Core + easy cardio", description: "Easy cardio 10–20 min at conversational pace", items: [
     prescription("Plank", null, "15–25 seconds; knees down is fine.", 1, 20),
     prescription("Side Plank", null, "10–20 seconds per side; knee down is fine.", 1, 15),
-    { title: "Easy walking or cycling", notes: "10–20 easy minutes; conversational pace. Record seconds or use the rest timer.",
-      guide_url: null, guide: { target: "Cardiorespiratory fitness", equipment: "Walking or stationary bike", cues: ["Start at a pace where you can speak in sentences.", "Build duration gradually, not speed.", "Cool down at an easy pace."], tip: "Follow your clinician's glucose plan around exercise." },
+    { title: "Easy stationary cycling", notes: "10–20 easy minutes; conversational pace. Record seconds or use the rest timer.",
+      ...workoutGuideFor("Easy stationary cycling"),
       sets: [{ kg: null, reps: null, seconds: 600, completed: false }] },
   ] },
   { day: 6, title: "Full body · optional / easy", description: "Start after recovery is reliable; 1 set at first", items: [
@@ -71,18 +95,18 @@ export const STARTER_PLAN = [
   ] },
   { day: 0, title: "Recovery · swimming or rest", description: "Gentle swimming only; rest instead if needed", items: [
     { title: "Easy swimming", notes: "10–20 easy minutes with breaks; do not swim alone. Rest is fine.",
-      guide_url: null, guide: { target: "Easy cardiovascular recovery", equipment: "Pool", cues: ["Swim easy lengths with breaks.", "Stop before fatigue changes your stroke.", "Rest instead if you need recovery."], tip: "Follow your clinician's glucose plan; do not swim alone." },
+      ...workoutGuideFor("Easy swimming"),
       sets: [{ kg: null, reps: null, seconds: 600, completed: false }] },
   ] },
   { day: null, title: "Mobility · optional daily", description: "5–8 easy minutes after warming up; never force a split", items: [
     { title: "Half-kneeling hip flexor stretch", notes: "20–30 sec per side. Tuck the pelvis, squeeze the back-leg glute and move forward gently.",
-      guide_url: null, guide: { target: "Hip flexors", equipment: "Bodyweight", cues: ["Half-kneel with front knee over ankle.", "Gently tuck the pelvis and squeeze the back glute.", "Shift forward a little; feel mild tension, not pain."], tip: "Do not force the front knee forward." },
+      ...workoutGuideFor("Half-kneeling hip flexor stretch"),
       sets: [{ kg: null, reps: null, seconds: 25, completed: false }] },
     { title: "Seated hamstring stretch", notes: "20–30 sec per side; hinge at the hips, knees may bend slightly.",
-      guide_url: null, guide: { target: "Hamstrings", equipment: "Bodyweight", cues: ["Sit tall with one leg comfortably straight.", "Hinge gently from the hips, keeping your back long.", "Breathe and switch sides."], tip: "Do not bounce or push into sharp pain." },
+      ...workoutGuideFor("Seated hamstring stretch"),
       sets: [{ kg: null, reps: null, seconds: 25, completed: false }] },
     { title: "Butterfly stretch", notes: "20–30 sec; keep your spine tall and do not press your knees down.",
-      guide_url: null, guide: { target: "Adductors", equipment: "Bodyweight", cues: ["Sit with soles of feet together.", "Sit tall and let the knees relax outward.", "Gently lean forward from the hips if comfortable."], tip: "A split is a long-term skill, never a forced stretch." },
+      ...workoutGuideFor("Butterfly stretch"),
       sets: [{ kg: null, reps: null, seconds: 25, completed: false }] },
   ] },
 ] as const;

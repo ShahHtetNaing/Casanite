@@ -143,7 +143,7 @@ function GroupForm({ group, onSave }: { group: RoutineGroup | null; onSave: (v: 
     <form onSubmit={submit} className="grid gap-4">
       <DialogHeader>
         <DialogTitle className="tracking-wider">{group ? "Edit group" : "New group"}</DialogTitle>
-        <DialogDescription>A routine block, e.g. a gym day, habit list or goal set.</DialogDescription>
+        <DialogDescription>A habit list, learning routine, reminder or goal set.</DialogDescription>
       </DialogHeader>
       <Field label="Title">
         <Input value={title} onChange={(e) => setTitle(e.target.value)} required autoFocus />
@@ -154,7 +154,7 @@ function GroupForm({ group, onSave }: { group: RoutineGroup | null; onSave: (v: 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Type">
           <select className={selectClass} value={kind} onChange={(e) => setKind(e.target.value as ItemKind)}>
-            {ITEM_KINDS.map((k) => (
+            {ITEM_KINDS.filter((k) => k !== "exercise").map((k) => (
               <option key={k} value={k}>
                 {k}
               </option>
@@ -227,7 +227,6 @@ export type ItemFormValues = Pick<
 >;
 
 const YOUTUBE_RE = /^https?:\/\/([a-z0-9-]+\.)?(youtube\.com|youtu\.be)\//i;
-const MS_RE = /^https:\/\/www\.muscleandstrength\.com\/exercises\/[a-z0-9-]+\.html$/;
 
 export function ItemDialog({
   open,
@@ -276,7 +275,6 @@ function ItemForm({
   const [title, setTitle] = useState(item?.title ?? "");
   const [details, setDetails] = useState(item?.details ?? "");
   const [youtube, setYoutube] = useState(item?.youtube_url ?? "");
-  const [guideUrl, setGuideUrl] = useState(item?.guide_url ?? "");
   const [notes, setNotes] = useState(item?.notes ?? "");
   const [frequency, setFrequency] = useState<Frequency | "">(item?.frequency ?? "");
   const [customDays, setCustomDays] = useState(item?.days_of_week != null);
@@ -289,11 +287,10 @@ function ItemForm({
 
   const group = groups.find((g) => g.id === groupId);
   const youtubeInvalid = youtube.trim() !== "" && !YOUTUBE_RE.test(youtube.trim());
-  const guideInvalid = guideUrl.trim() !== "" && !MS_RE.test(guideUrl.trim());
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !groupId || youtubeInvalid || guideInvalid) return;
+    if (!title.trim() || !groupId || youtubeInvalid) return;
     setSaving(true);
     try {
       await onSave({
@@ -301,7 +298,7 @@ function ItemForm({
         title: title.trim(),
         details: emptyToNull(details),
         youtube_url: emptyToNull(youtube),
-        guide_url: emptyToNull(guideUrl),
+        guide_url: item?.guide_url ?? null,
         notes: emptyToNull(notes),
         frequency: frequency === "" ? null : frequency,
         days_of_week: customDays ? days : null,
@@ -336,19 +333,7 @@ function ItemForm({
       <Field label="Sets / reps / details" hint='e.g. "3x8-10", "2x45s/side", "20-30m"'>
         <Input value={details} onChange={(e) => setDetails(e.target.value)} />
       </Field>
-      <Field
-        label="Muscle & Strength guide URL"
-        error={guideInvalid && "Must be a muscleandstrength.com/exercises/….html link."}
-      >
-        <Input
-          type="url"
-          value={guideUrl}
-          onChange={(e) => setGuideUrl(e.target.value)}
-          placeholder="https://www.muscleandstrength.com/exercises/…html"
-          aria-invalid={guideInvalid}
-        />
-      </Field>
-      <Field label="YouTube tutorial URL" error={youtubeInvalid && "Must be a youtube.com or youtu.be link."}>
+      <Field label="Video resource URL (optional)" error={youtubeInvalid && "Must be a youtube.com or youtu.be link."}>
         <Input
           type="url"
           value={youtube}
@@ -398,7 +383,7 @@ function ItemForm({
         </label>
       </div>
       <DialogFooter>
-        <Button type="submit" disabled={saving || youtubeInvalid || guideInvalid} className="neon-button">
+        <Button type="submit" disabled={saving || youtubeInvalid} className="neon-button">
           {saving ? "Saving…" : "Save"}
         </Button>
       </DialogFooter>

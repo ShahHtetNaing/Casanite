@@ -13,8 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
 import { WEEKDAY_SHORT } from "@/lib/date";
-import { EXERCISE_NAMES, STARTER_PLAN, workoutGuideFor } from "@/lib/workout-plan";
-import type { RoutineGroup, RoutineItem, WorkoutSession, WorkoutSet } from "@/lib/types";
+import { EXERCISE_NAMES, workoutGuideFor } from "@/lib/workout-plan";
+import { GoalPlan } from "./goal-plan";
+import { videoEmbedUrl } from "@/lib/exercise-video";
+import type { ExerciseGuide, RoutineGroup, RoutineItem, WorkoutSession, WorkoutSet } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -23,7 +25,7 @@ type Props = {
 };
 
 const DEFAULT_SET: WorkoutSet = { kg: null, reps: 10, seconds: null, completed: false };
-const MS_RE = /^https:\/\/www\.muscleandstrength\.com\/exercises\/[a-z0-9-]+\.html$/;
+const MS_RE = /^https:\/\/www\.muscleandstrength\.com\/exercises\/[a-z0-9-]+(?:\.html)?$/;
 const byDay = (iso: string) => new Date(`${iso}T12:00:00Z`).getUTCDay();
 const addDays = (iso: string, delta: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + delta * 86_400_000).toISOString().slice(0, 10);
 const pretty = (day: string) => new Date(`${day}T12:00:00Z`).toLocaleDateString("en-SG", { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
@@ -150,7 +152,7 @@ function ExerciseCard({
       <CardHeader className="flex flex-row items-center gap-2">
         <Dumbbell className="size-4 shrink-0 text-primary" />
         <CardTitle className="min-w-0 flex-1 text-sm">{item.title}</CardTitle>
-        <TutorialButton title={item.title} url={item.youtube_url} guideUrl={item.guide_url} guide={item.guide} />
+        <TutorialButton itemId={item.id} title={item.title} url={item.youtube_url} guideUrl={item.guide_url} guide={item.guide} />
         <Button size="icon-xs" variant="ghost" aria-label={`Edit ${item.title}`} onClick={onEdit}><Pencil /></Button>
         <Button size="icon-xs" variant="ghost" aria-label={`Remove ${item.title}`} onClick={onRemove}><Trash2 /></Button>
       </CardHeader>
@@ -183,21 +185,68 @@ function ExerciseEditor({ item, groups, onClose, onSave }: {
   const [rest, setRest] = useState(item?.workout_rest_seconds ?? 90);
   const [url, setUrl] = useState(item?.guide_url ?? "");
   const [busy, setBusy] = useState(false);
+  const [guide, setGuide] = useState<ExerciseGuide | null>(() => item?.guide?.video_url ? item.guide : workoutGuideFor(item?.title ?? "").guide ?? item?.guide ?? null);
+  const [videoUrl, setVideoUrl] = useState(guide?.video_url ?? "");
+  const [steps, setSteps] = useState(guide?.cues?.join("\n") ?? "");
+  const [manualGuide, setManualGuide] = useState(false);
+  const [importState, setImportState] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const matched = workoutGuideFor(title);
-  const guide = item && title.trim() === item.title ? item.guide : url === matched.guide_url ? matched.guide : null;
+  useEffect(() => {
+    if (manualGuide) { setImporting(false); return; }
+    const local = workoutGuideFor(title);
+    const unchanged = item && title.trim().toLowerCase() === item.title.trim().toLowerCase();
+    const saved = unchanged && item.guide?.video_url ? item.guide : null;
+    const ready = saved ?? (url === (local.guide_url ?? "") ? local.guide : null);
+    if (videoEmbedUrl(ready?.video_url)) {
+      setGuide(ready); setVideoUrl(ready?.video_url ?? ""); setSteps(ready?.cues?.join("\n") ?? "");
+      setImportState(saved ? "Saved video loaded. Review the instructions before saving." : "Library video and instructions loaded automatically.");
+      setImporting(false); return;
+    }
+    if (!MS_RE.test(url)) { setImporting(false); setImportState("Choose a library exercise, or add a video and instructions below."); return; }
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      setImporting(true); setImportState("Importing from the official exercise page…");
+      fetch("/api/workout/guide", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, guideUrl: url }), signal: controller.signal,
+      }).then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message ?? "Guide import failed.");
+        if (controller.signal.aborted) return;
+        if (result.guide && videoEmbedUrl(result.guide.video_url)) {
+          setGuide(result.guide); setVideoUrl(result.guide.video_url); setSteps(result.guide.cues?.join("\n") ?? "");
+          if (result.guide_url) setUrl(result.guide_url);
+          setImportState("Official video imported. Review its steps before saving.");
+        } else setImportState(result.reason ?? "No video found. Add a verified link and steps manually.");
+      }).catch((error) => { if (!controller.signal.aborted) setImportState(error instanceof Error ? error.message : "Import failed."); })
+        .finally(() => { if (!controller.signal.aborted) setImporting(false); });
+    }, 350);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [title, url, manualGuide, item, attempt]);
+
   function chooseTitle(value: string) {
-    if (item && value !== item.title && title === item.title) { setNotes(""); setSets([{ ...DEFAULT_SET }, { ...DEFAULT_SET }]); }
+    if (value.trim().toLowerCase() === title.trim().toLowerCase()) { setTitle(value); return; }
+    const unchanged = item && value.trim().toLowerCase() === item.title.trim().toLowerCase();
+    if (item && !unchanged && title.trim().toLowerCase() === item.title.trim().toLowerCase()) setSets([{ ...DEFAULT_SET }]);
+    const next = unchanged && item.guide?.video_url ? { guide_url: item.guide_url, guide: item.guide } : workoutGuideFor(value);
     setTitle(value);
-    setUrl(workoutGuideFor(value).guide_url ?? "");
+    setUrl(next.guide_url ?? ""); setGuide(next.guide); setVideoUrl(next.guide?.video_url ?? "");
+    setSteps(next.guide?.cues?.join("\n") ?? ""); setManualGuide(false);
   }
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !groupId || !validSets(sets)) return toast.error("Choose a day and valid set targets.");
     if (url && !MS_RE.test(url)) return toast.error("Use a Muscle & Strength exercise page URL.");
+    const video = videoEmbedUrl(videoUrl);
+    if (!video || !steps.trim()) return toast.error("Add a supported video link and at least one instruction, or choose a video-ready library exercise.");
+    const cues = steps.split("\n").map((step) => step.trim()).filter(Boolean);
+    if (cues.length > 12 || cues.some((cue) => cue.length > 300)) return toast.error("Use up to 12 short instruction lines (300 characters each).");
     if (!Number.isInteger(rest) || rest < 30 || rest > 600) return toast.error("Rest must be 30–600 seconds.");
     setBusy(true);
     try { await onSave({ p_id: item?.id ?? null, p_group: groupId, p_title: title.trim(), p_notes: notes.trim() || null,
-      p_sets: sets.map((s) => ({ ...s, completed: false })), p_guide_url: url || null, p_guide: guide, p_rest_seconds: rest });
+      p_sets: sets.map((s) => ({ ...s, completed: false })), p_guide_url: url || null,
+      p_guide: { ...guide, video_url: video, cues, ...(url ? { source_url: url } : {}) }, p_rest_seconds: rest });
     } catch { /* error shown by parent */ } finally { setBusy(false); }
   }
   return (
@@ -211,9 +260,19 @@ function ExerciseEditor({ item, groups, onClose, onSave }: {
         <Input aria-label="Exercise name" list="ms-workout-exercises" value={title} maxLength={150} onChange={(e) => chooseTitle(e.target.value)} autoFocus required />
         <datalist id="ms-workout-exercises">{EXERCISE_NAMES.map((n) => <option key={n} value={n} />)}</datalist>
       </label>
-      <p className="text-xs text-muted-foreground">{matched.guide_url ? "Matched exercise page. Video and form guide switch with the exercise." : "No exact match in the exercise catalog. Add a verified URL or use the search guide."}</p>
+      <p role="status" className="text-xs text-muted-foreground">{importState}</p>
       <label className="grid gap-1 text-sm font-medium">Exercise guide URL (optional)
-        <Input aria-label="Exercise guide URL" type="url" placeholder="https://www.muscleandstrength.com/exercises/…html" value={url} onChange={(e) => setUrl(e.target.value)} />
+        <Input aria-label="Exercise guide URL" type="url" placeholder="https://www.muscleandstrength.com/exercises/…" value={url}
+          readOnly={!!matched.guide_url} onChange={(e) => { setUrl(e.target.value); setVideoUrl(""); setSteps(""); setGuide(null); setManualGuide(false); }} />
+      </label>
+      {url && !videoUrl && <Button type="button" size="sm" variant="outline" disabled={importing} onClick={() => { setManualGuide(false); setAttempt((value) => value + 1); }}>Retry guide import</Button>}
+      <label className="grid gap-1 text-sm font-medium">Guide video (YouTube or Vimeo)
+        <Input aria-label="Exercise video URL" type="url" value={videoUrl} maxLength={500} placeholder="https://www.youtube.com/watch?v=…"
+          onChange={(e) => { setVideoUrl(e.target.value); setManualGuide(true); }} />
+      </label>
+      <label className="grid gap-1 text-sm font-medium">How to do it (one step per line)
+        <Textarea aria-label="Exercise guide instructions" value={steps} rows={3} maxLength={2500}
+          onChange={(e) => { setSteps(e.target.value); setManualGuide(true); }} />
       </label>
       <label className="grid gap-1 text-sm font-medium">Notes / modifications
         <Textarea aria-label="Exercise notes" value={notes} maxLength={1000} onChange={(e) => setNotes(e.target.value)} rows={2} />
@@ -223,8 +282,9 @@ function ExerciseEditor({ item, groups, onClose, onSave }: {
       </label>
       <p className="text-xs text-muted-foreground">Set defaults for future workouts; your dated logs will not change.</p>
       <SetFields sets={sets} onChange={setSets} />
-      {title.trim() && <TutorialButton key={title} title={title} url={null} guideUrl={url || null} guide={guide} />}
-      <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={onClose}>Cancel</Button><Button type="submit" disabled={busy}><Check /> Save exercise</Button></div>
+      {title.trim() && <TutorialButton key={title} title={title} url={null} guideUrl={url || null} autoImport={false}
+        guide={{ ...guide, video_url: videoUrl, cues: steps.split("\n").filter(Boolean) }} />}
+      <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={onClose}>Cancel</Button><Button type="submit" disabled={busy || importing}><Check /> Save exercise</Button></div>
     </form>
   );
 }
@@ -239,7 +299,6 @@ export function Workout({ day, today, groups: initialGroups, items: initialItems
   const [editingGroup, setEditingGroup] = useState<RoutineGroup | "new" | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [installing, setInstalling] = useState(false);
-  const [previewPlan, setPreviewPlan] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [groupDays, setGroupDays] = useState<number[]>([]);
   const [busyGroup, setBusyGroup] = useState(false);
@@ -329,17 +388,11 @@ export function Workout({ day, today, groups: initialGroups, items: initialItems
   return (
     <PageShell title="Workout" subtitle="Your routines, form guides and actual sets in one place">
       <div className="grid gap-3 rounded-2xl border bg-card p-4 text-sm">
-        <p>Start with <strong>one light set</strong> per exercise for two weeks, then try two if recovered. Saturday is optional. You can edit every kg, rep and set; 0 kg means bodyweight. Save sets after ticking them. Log your daily quest on Dashboard separately for EXP.</p>
+        <p>You can edit every kg, rep and set; 0 kg means bodyweight. Tick completed sets and save them. Dated logs and previous-session values stay with your exercise history.</p>
         <p className="text-xs text-muted-foreground">Strength and muscle are built gradually. Core work cannot target side fat. Avoid unsupervised flips or forced split stretches; follow your clinician&apos;s glucose plan during exercise.</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setPreviewPlan((v) => !v)}>{previewPlan ? "Hide" : "Preview"} starter plan</Button>
-          {!planInstalled && <Button size="sm" onClick={install} disabled={installing}>Apply plan to my workouts</Button>}
-          {planInstalled && <span className="text-xs text-muted-foreground">Starter plan applied · customize below</span>}
-          <a className="text-xs font-medium text-primary underline" href="https://www.muscleandstrength.com/workouts/3-day-PPL-workout-for-beginners" target="_blank" rel="noopener noreferrer">M&amp;S beginner PPL reference ↗</a>
-          <a className="text-xs font-medium text-primary underline" href="https://www.muscleandstrength.com/workouts/3-day-full-body-dumbbell-workout" target="_blank" rel="noopener noreferrer">3-day full-body alternative ↗</a>
-        </div>
-        {previewPlan && <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{STARTER_PLAN.map((g) => <div key={g.day ?? "mobility"} className="rounded-xl border p-3 text-xs"><strong>{g.day == null ? "Daily (optional)" : WEEKDAY_SHORT[g.day]} · {g.title}</strong><p className="text-muted-foreground">{g.items.map((e) => e.title).join(" · ")}</p></div>)}<div className="rounded-xl border p-3 text-xs"><strong>Fri · Rest</strong><p className="text-muted-foreground">Optional gentle mobility.</p></div></div>}
       </div>
+
+      <GoalPlan weekday={weekday} installed={planInstalled} installing={installing} onApply={() => void install()} />
 
       {day === today && <WorkoutClock day={day} />}
       <div className="flex flex-wrap items-center gap-2">

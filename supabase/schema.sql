@@ -410,8 +410,11 @@ begin
   perform public._seed_item(g, 3, 'Russian Twists', '3x20');
   perform public._seed_item(g, 4, 'Bicycle Crunches', '3x20');
 
-  g := public._seed_group('Active Recovery', 'Sunday', 'recovery', 'daily', '{0}', 'sky', 60);
+  g := public._seed_group('Swimming · recovery', 'Sunday · easy swimming or rest', 'exercise', 'daily', '{0}', 'sky', 59);
   perform public._seed_item(g, 1, 'Swimming');
+  update public.routines_and_goals set workout_template = '[{"kg":null,"reps":null,"seconds":600,"completed":false}]'::jsonb
+  where group_id = g and title = 'Swimming' and workout_template is null;
+  g := public._seed_group('Active Recovery', 'Sunday', 'recovery', 'daily', '{0}', 'sky', 60);
   perform public._seed_item(g, 2, 'Master class revision');
   perform public._seed_item(g, 3, 'Anime/Object sketching');
 
@@ -1132,10 +1135,10 @@ alter table public.meal_logs add column if not exists source text not null defau
 
 -- Exercise form guides from muscleandstrength.com: link + { target, secondary[], equipment, cues[], tip }.
 alter table public.routines_and_goals add column if not exists guide_url text
-  check (guide_url is null or guide_url ~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+\.html$');
+  check (guide_url is null or guide_url ~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+(\.html)?$');
 alter table public.routines_and_goals add column if not exists guide jsonb;
 alter table public.ai_suggestions add column if not exists guide_url text
-  check (guide_url is null or guide_url ~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+\.html$');
+  check (guide_url is null or guide_url ~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+(\.html)?$');
 alter table public.ai_suggestions add column if not exists guide jsonb;
 
 do $$
@@ -1479,6 +1482,21 @@ drop trigger if exists clear_stale_exercise_guide on public.routines_and_goals;
 create trigger clear_stale_exercise_guide before update of title on public.routines_and_goals
   for each row execute function public.clear_stale_exercise_guide();
 
+create or replace function public.valid_workout_guide(p_guide jsonb)
+returns boolean language plpgsql immutable as $$
+begin
+  return coalesce(p_guide is not null and jsonb_typeof(p_guide) = 'object'
+    and coalesce(p_guide->>'video_url', '') ~ '^https://(www\.youtube(-nocookie)?\.com/embed/[A-Za-z0-9_-]{11}(\?rel=0)?|player\.vimeo\.com/video/[0-9]{5,12}(\?h=[A-Za-z0-9]{6,32})?)$'
+    and jsonb_typeof(p_guide->'cues') = 'array'
+    and jsonb_array_length(p_guide->'cues') between 1 and 12
+    and not exists (select 1 from jsonb_array_elements(p_guide->'cues') as cue
+      where jsonb_typeof(cue) <> 'string' or length(btrim(cue #>> '{}')) not between 1 and 300), false);
+exception when others then return false;
+end;
+$$;
+revoke all on function public.valid_workout_guide(jsonb) from public, anon;
+grant execute on function public.valid_workout_guide(jsonb) to authenticated;
+
 -- A changed movement gets a new item ID so its previous logs and EXP remain
 -- attached to the old exercise. Prescriptions are editable independently.
 create or replace function public.save_workout_exercise(
@@ -1494,7 +1512,8 @@ begin
   if p_title is null or length(btrim(p_title)) not between 1 and 150 or not public.valid_workout_sets(p_sets)
      or p_rest_seconds is null or p_rest_seconds not between 30 and 600
      or length(coalesce(p_notes, '')) > 1000
-     or (p_guide_url is not null and p_guide_url !~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+\.html$')
+     or not coalesce(public.valid_workout_guide(p_guide), false)
+     or (p_guide_url is not null and p_guide_url !~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+(\.html)?$')
   then raise exception 'invalid exercise' using errcode = '22023'; end if;
   if p_id is not null then
     select * into old_item from public.routines_and_goals
@@ -1578,7 +1597,8 @@ begin
     for ex in select value from jsonb_array_elements(grp->'items') loop
       if length(btrim(ex->>'title')) not between 1 and 150
          or not public.valid_workout_sets(ex->'sets')
-         or ((ex->>'guide_url') is not null and (ex->>'guide_url') !~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+\.html$')
+         or not coalesce(public.valid_workout_guide(ex->'guide'), false)
+         or ((ex->>'guide_url') is not null and (ex->>'guide_url') !~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+(\.html)?$')
       then raise exception 'invalid plan exercise' using errcode = '22023'; end if;
       insert into public.routines_and_goals
         (user_id, group_id, title, details, notes, guide_url, guide, workout_template, sort_order, is_trackable)
@@ -1604,5 +1624,30 @@ begin
   ] loop
     execute format('revoke all on function %s from public, anon', f);
     execute format('grant execute on function %s to authenticated', f);
+  end loop;
+end $$;
+
+-- v9: modern source URLs and a separate home for recovery exercises.
+alter table public.routines_and_goals drop constraint if exists routines_and_goals_guide_url_check;
+alter table public.routines_and_goals add constraint routines_and_goals_guide_url_check
+  check (guide_url is null or guide_url ~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+(\.html)?$');
+alter table public.ai_suggestions drop constraint if exists ai_suggestions_guide_url_check;
+alter table public.ai_suggestions add constraint ai_suggestions_guide_url_check
+  check (guide_url is null or guide_url ~* '^https://www\.muscleandstrength\.com/exercises/[a-z0-9-]+(\.html)?$');
+
+do $$
+declare g public.routine_groups; v_group uuid;
+begin
+  for g in select * from public.routine_groups where kind = 'recovery' loop
+    if not exists (select 1 from public.routines_and_goals i where i.group_id = g.id and (
+      i.workout_template is not null or i.guide_url is not null or lower(btrim(i.title)) = 'swimming'
+    )) then continue; end if;
+    insert into public.routine_groups (user_id, title, description, kind, frequency, days_of_week, color, sort_order, is_active)
+    values (g.user_id, left(g.title || ' · workouts', 80), g.description, 'exercise', g.frequency, g.days_of_week, g.color, g.sort_order, g.is_active)
+    returning id into v_group;
+    update public.routines_and_goals i set group_id = v_group,
+      workout_template = case when lower(btrim(i.title)) = 'swimming' and i.workout_template is null
+        then '[{"kg":null,"reps":null,"seconds":600,"completed":false}]'::jsonb else i.workout_template end
+    where i.group_id = g.id and (i.workout_template is not null or i.guide_url is not null or lower(btrim(i.title)) = 'swimming');
   end loop;
 end $$;
