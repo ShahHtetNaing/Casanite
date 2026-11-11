@@ -29,7 +29,7 @@ export function workoutGuideFor(title: string): { guide_url: string | null; guid
   return { guide_url: `https://www.muscleandstrength.com/exercises/${slug}.html`, guide: GUIDES[slug] ?? null };
 }
 
-const prescription = (title: string, reps: number | null, notes: string, sets = 2, seconds: number | null = null) => ({
+const prescription = (title: string, reps: number | null, notes: string, sets = 1, seconds: number | null = null) => ({
   title,
   notes,
   ...workoutGuideFor(title),
