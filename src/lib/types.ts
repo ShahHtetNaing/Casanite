@@ -373,6 +373,9 @@ export interface SavedWord {
 }
 
 export interface ExerciseGuide {
+  description?: string;
+  video_url?: string;
+  source_url?: string;
   target?: string;
   secondary?: string[];
   equipment?: string;

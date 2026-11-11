@@ -21,8 +21,7 @@ import { FitWidget } from "./fit-widget";
 import { GroupCard, type RoutineHandlers } from "./group-card";
 import { GuitarBanner } from "./guitar-banner";
 import { HealthPanel, type HealthFormValues } from "./health-panel";
-import { StatsHud } from "./stats-hud";
-import { WeeklyReportCard } from "@/components/journal/weekly-report-card";
+import { DashboardOverview } from "./dashboard-overview";
 import { useGoogleData } from "./use-google-data";
 
 const NON_QUEST_KINDS = new Set(["diet", "goal"]);
@@ -38,6 +37,8 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
   const supabase = useMemo(() => createClient(), []);
   const [data, setData] = useState(initialData);
   const [editMode, setEditMode] = useState(false);
+  const [tab, setTab] = useState("today");
+  const [activityRange, setActivityRange] = useState(14);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [itemDialog, setItemDialog] = useState<{ open: boolean; item: RoutineItem | null; groupId: string | null }>({
     open: false,
@@ -97,7 +98,7 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
   const todayGroups = useMemo(
     () =>
       groups
-        .filter((g) => g.is_active && !NON_QUEST_KINDS.has(g.kind))
+        .filter((g) => g.is_active && g.kind !== "exercise" && !NON_QUEST_KINDS.has(g.kind))
         .map((g) => ({
           group: g,
           items: (itemsByGroup.get(g.id) ?? []).filter(
@@ -115,9 +116,10 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
   const questsDone = questItems.filter((i) => (counts.get(i.id) ?? 0) >= i.target_count).length;
 
   const goalGroups = groups
+    .filter((g) => g.is_active && g.kind !== "exercise")
     .map((g) => ({
       group: g,
-      items: (itemsByGroup.get(g.id) ?? []).filter((i) => GOAL_FREQUENCIES.has(effectiveFrequency(i, g))),
+      items: (itemsByGroup.get(g.id) ?? []).filter((i) => i.is_active && GOAL_FREQUENCIES.has(effectiveFrequency(i, g))),
     }))
     .filter((x) => x.items.length > 0 || x.group.kind === "goal");
 
@@ -127,11 +129,11 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
     const byDay = new Map<string, number>();
     for (const r of data.recentDays) byDay.set(r.completed_on, (byDay.get(r.completed_on) ?? 0) + EXP_PER_TASK);
     const base = Date.UTC(today.year, today.month - 1, today.day);
-    return Array.from({ length: 14 }, (_, i) => {
-      const iso = new Date(base - (13 - i) * 86_400_000).toISOString().slice(0, 10);
+    return Array.from({ length: activityRange }, (_, i) => {
+      const iso = new Date(base - (activityRange - 1 - i) * 86_400_000).toISOString().slice(0, 10);
       return { date: iso.slice(5), exp: byDay.get(iso) ?? 0 };
     });
-  }, [data.recentDays, today.year, today.month, today.day]);
+  }, [data.recentDays, today.year, today.month, today.day, activityRange]);
 
   // -------------------------------------------------------------------
   // Completion (EXP / streak are computed in Postgres)
@@ -197,6 +199,13 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
   };
 
   async function saveItem(values: ItemFormValues) {
+    const selectedGroup = groupById.get(values.group_id);
+    const exercise = workoutGuideFor(values.title);
+    if (selectedGroup?.kind === "recovery" && (exercise.guide || exercise.guide_url)) {
+      const message = "Add or edit exercises on the Workout page. Recovery here is for non-workout activities.";
+      toast.error(message);
+      throw new Error(message);
+    }
     const existing = itemDialog.item;
     if (existing) {
       const workout = groupById.get(existing.group_id)?.kind === "exercise" || groupById.get(values.group_id)?.kind === "exercise";
@@ -270,13 +279,15 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
     >
 
         <GuitarBanner guitarClasses={guitarClasses} />
-        <StatsHud stats={stats} questsDone={questsDone} questsTotal={questItems.length} />
-        <WeeklyReportCard report={data.latestReport} />
+        <DashboardOverview data={data} done={questsDone} total={questItems.length} onSelect={(value) => {
+          setTab(value);
+          requestAnimationFrame(() => document.getElementById("dashboard-sections")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+        }} />
 
-        <Tabs defaultValue="today" className="gap-4">
+        <Tabs id="dashboard-sections" value={tab} onValueChange={setTab} className="scroll-mt-5 gap-4">
           <TabsList className="w-full justify-start overflow-x-auto overflow-y-hidden sm:w-fit">
-            <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="routines">All routines</TabsTrigger>
+            <TabsTrigger value="today">Today&apos;s habits</TabsTrigger>
+            <TabsTrigger value="routines">Habits &amp; routines</TabsTrigger>
             <TabsTrigger value="goals">Goals</TabsTrigger>
             <TabsTrigger value="health">Health</TabsTrigger>
           </TabsList>
@@ -286,7 +297,7 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
               <div className="grid content-start gap-4 md:grid-cols-2">
                 {todayGroups.length === 0 && (
                   <p className="neon-panel p-6 text-sm text-muted-foreground md:col-span-2">
-                    No quests scheduled today. Turn on Edit Mode to add some.
+                    No habits scheduled today. Turn on Edit Mode to add a routine or reminder.
                   </p>
                 )}
                 {todayGroups.map(({ group, items: groupItems }) => (
@@ -304,7 +315,9 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
               <aside className="grid content-start gap-4">
                 <FitWidget />
                 <CalendarWidget state={calendar.state} refresh={() => void calendar.refresh()} />
-                <section className="neon-panel p-4">
+                <details className="neon-panel p-4" open={editMode || undefined}>
+                  <summary className="cursor-pointer text-sm font-semibold">Nutrition reminders</summary>
+                  <div className="mt-3">
                   <h3 className="mb-2 flex items-center gap-1.5 text-sm font-bold text-emerald-600 dark:text-emerald-300">
                     <Salad className="size-4" /> Diet rules
                     <Link href="/journal" className="ml-auto text-xs font-medium text-blue-600 hover:underline dark:text-blue-300">
@@ -335,11 +348,16 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
                       Edit diet group
                     </Button>
                   )}
-                </section>
+                  </div>
+                </details>
                 <section className="neon-panel p-4">
-                  <h3 className="mb-2 text-sm font-bold text-violet-600 dark:text-violet-300">
-                    EXP · last 14 days
-                  </h3>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold">Activity · {activityRange} days</h3>
+                    <div className="flex gap-1" aria-label="Activity history range">
+                      {[7, 14, 30].map((days) => <Button type="button" key={days} size="xs" variant={activityRange === days ? "default" : "ghost"}
+                        aria-pressed={activityRange === days} onClick={() => setActivityRange(days)}>{days}d</Button>)}
+                    </div>
+                  </div>
                   <div className="h-28">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={activity}>
@@ -348,7 +366,7 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
                           tick={{ fontSize: 9, fill: "var(--muted-foreground)" }}
                           axisLine={false}
                           tickLine={false}
-                          interval={1}
+                          interval="preserveStartEnd"
                         />
                         <Tooltip
                           cursor={{ fill: "oklch(1 0 0 / 5%)" }}
@@ -371,7 +389,7 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
             )}
             {!editMode && (
               <p className="mb-4 tabular-nums text-xs text-muted-foreground">
-                Turn on Edit mode to add, edit, reorder or delete any group, exercise, habit or goal.
+                Turn on Edit mode to add, edit, reorder or delete habits, reminders and goals.
               </p>
             )}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
