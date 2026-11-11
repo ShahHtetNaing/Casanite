@@ -1427,6 +1427,12 @@ $$;
 create or replace function public.workout_session_item_guard()
 returns trigger language plpgsql as $$
 begin
+  -- ON DELETE SET NULL runs after the exercise is gone. Keep the session's
+  -- name and set snapshot rather than blocking the parent deletion.
+  if tg_op = 'UPDATE' and new.item_id is null and old.item_id is not null
+     and not exists (select 1 from public.routines_and_goals where id = old.item_id) then
+    return new;
+  end if;
   if new.item_id is null or not exists (
     select 1 from public.routines_and_goals i
     join public.routine_groups g on g.id = i.group_id
