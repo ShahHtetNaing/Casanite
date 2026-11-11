@@ -116,7 +116,7 @@ export function ItemRow({
         <p className={cn("text-sm", done && "text-muted-foreground line-through decoration-cyan-400/60")}>
           {item.title}
           {item.details && (
-            <span className="ml-2 tabular-nums text-xs text-blue-300/80">{item.details}</span>
+            <span className="ml-2 tabular-nums text-xs text-muted-foreground">{item.details}</span>
           )}
         </p>
         {item.notes && <p className="text-xs text-muted-foreground">{item.notes}</p>}

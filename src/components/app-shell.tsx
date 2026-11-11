@@ -47,8 +47,8 @@ function Brand() {
         priority
       />
       <span className="leading-tight">
-        <span className="block text-sm font-semibold">Shah Htet Naing</span>
-        <span className="block text-[11px] text-muted-foreground">Casanite</span>
+        <span className="app-brand-name block">Shah Htet Naing</span>
+        <span className="app-brand-project mt-1 block">Casanite / Workspace</span>
       </span>
     </Link>
   );
@@ -102,14 +102,14 @@ export function AppShell({
     <div className="min-h-screen bg-background md:grid md:grid-cols-[232px_minmax(0,1fr)]">
       <aside className="sticky top-0 hidden h-screen flex-col gap-6 border-r border-sidebar-border bg-sidebar p-4 text-sidebar-foreground md:flex">
         <Brand />
-        <nav className="grid gap-1" aria-label="Main">
+        <nav className="grid gap-1 border-t border-dashed border-sidebar-border pt-4" aria-label="Main">
           {NAV.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
               aria-current={active(href) ? "page" : undefined}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                "app-nav-link flex items-center gap-2.5 rounded-md px-3 py-2 transition-colors",
                 active(href)
                   ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
                   : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
@@ -139,8 +139,9 @@ export function AppShell({
             <Link
               key={href}
               href={href}
+              aria-current={active(href) ? "page" : undefined}
               className={cn(
-                "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm",
+                "app-nav-link flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5",
                 active(href) ? "bg-accent font-medium" : "text-muted-foreground",
               )}
             >
@@ -151,10 +152,11 @@ export function AppShell({
         </nav>
 
         <main className="mx-auto grid max-w-7xl gap-5 p-4 pb-20 md:p-8 md:pb-20">
-          <header className="flex flex-wrap items-end gap-3">
+          <header className="app-page-header flex flex-wrap items-end gap-3">
             <div className="flex-1">
-              <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-              {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
+              <p className="app-eyebrow">Casanite / Personal system</p>
+              <h1 className="app-title">{title}</h1>
+              {subtitle && <p className="app-subtitle mt-2">{subtitle}</p>}
             </div>
             {actions}
           </header>
