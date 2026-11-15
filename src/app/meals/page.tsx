@@ -1,7 +1,8 @@
 import { requireOwnerPage } from "@/lib/owner-page";
 import { Meals } from "@/components/meals/meals";
 import { zonedParts } from "@/lib/date";
-import type { InsulinLog, MealLog, NutritionSettings, Supplement, SupplementLog } from "@/lib/types";
+import type { InsulinLog, MedicineLog, MealLog, NutritionSettings, Supplement, SupplementLog } from "@/lib/types";
+import { medicationTakenAt } from "@/lib/medication-log";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +20,9 @@ export default async function MealsPage({ searchParams }: { searchParams: Promis
   const { supabase } = await requireOwnerPage();
   const today = zonedParts().isoDate;
   const requested = (await searchParams).day;
-  const day = requested && /^\d{4}-\d{2}-\d{2}$/.test(requested) && requested <= today ? requested : today;
+  const day = requested && medicationTakenAt(requested, "12:00") && requested <= today ? requested : today;
 
-  const [meals, recent, insulin, supplements, supplementLogs, settings, weight] = await Promise.all([
+  const [meals, recent, insulin, medicines, supplements, supplementLogs, settings, weight] = await Promise.all([
     supabase.from("meal_logs").select("*").eq("day", day).order("created_at"),
     supabase
       .from("meal_logs")
@@ -29,6 +30,7 @@ export default async function MealsPage({ searchParams }: { searchParams: Promis
       .order("created_at", { ascending: false })
       .limit(80),
     supabase.from("insulin_logs").select("*").eq("day", day).order("taken_at"),
+    supabase.from("medicine_logs").select("*").eq("day", day).order("taken_at"),
     supabase.from("supplements").select("*").order("sort_order").order("created_at"),
     supabase.from("supplement_logs").select("id, supplement_id, day").eq("day", day),
     supabase.from("nutrition_settings").select("*").maybeSingle(),
@@ -49,6 +51,9 @@ export default async function MealsPage({ searchParams }: { searchParams: Promis
       initialMeals={(meals.data ?? []) as MealLog[]}
       recentMeals={(recent.data ?? []) as Omit<MealLog, "id" | "day" | "created_at">[]}
       initialInsulin={(insulin.data ?? []) as InsulinLog[]}
+      initialMedicines={(medicines.data ?? []) as MedicineLog[]}
+      medicinesLoadError={!!medicines.error}
+      insulinLoadError={!!insulin.error}
       initialSupplements={(supplements.data ?? []) as Supplement[]}
       initialSupplementLogs={(supplementLogs.data ?? []) as SupplementLog[]}
       initialSettings={{ ...DEFAULT_SETTINGS, ...((settings.data ?? {}) as Partial<NutritionSettings>) }}

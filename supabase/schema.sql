@@ -1023,6 +1023,19 @@ create index if not exists insulin_logs_user_day on public.insulin_logs (user_id
 -- Lantus is once a day.
 create unique index if not exists insulin_logs_one_lantus on public.insulin_logs (user_id, day) where kind = 'lantus';
 
+create table if not exists public.medicine_logs (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  day            date not null default public.app_today(),
+  medicine_name  text not null check (length(btrim(medicine_name)) between 1 and 120),
+  dose_taken     text not null check (length(btrim(dose_taken)) between 1 and 120),
+  taken_at       timestamptz not null,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
+  check ((taken_at at time zone 'Asia/Singapore')::date = day)
+);
+create index if not exists medicine_logs_user_day on public.medicine_logs (user_id, day);
+
 create table if not exists public.supplements (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
@@ -1058,13 +1071,13 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['daily_mind', 'saved_quotes', 'saved_words', 'meal_logs', 'nutrition_settings']
+  foreach t in array array['daily_mind', 'saved_quotes', 'saved_words', 'meal_logs', 'medicine_logs', 'nutrition_settings']
   loop
     execute format('drop trigger if exists %I on public.%I', t || '_touch', t);
     execute format('create trigger %I before update on public.%I
                       for each row execute function public.touch_updated_at()', t || '_touch', t);
   end loop;
-  foreach t in array array['daily_mind', 'saved_quotes', 'saved_words', 'meal_logs', 'insulin_logs',
+  foreach t in array array['daily_mind', 'saved_quotes', 'saved_words', 'meal_logs', 'insulin_logs', 'medicine_logs',
                            'supplements', 'supplement_logs', 'nutrition_settings']
   loop
     execute format('alter table public.%I enable row level security', t);

@@ -310,6 +310,14 @@ export interface InsulinLog {
   meal: MealSlot | null;
 }
 
+export interface MedicineLog {
+  id: string;
+  day: string;
+  medicine_name: string;
+  dose_taken: string;
+  taken_at: string;
+}
+
 export interface Supplement {
   id: string;
   name: string;
