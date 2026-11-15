@@ -284,8 +284,8 @@ export function Dashboard({ initialData, userEmail }: { initialData: DashboardDa
           requestAnimationFrame(() => document.getElementById("dashboard-sections")?.scrollIntoView({ behavior: "smooth", block: "start" }));
         }} />
 
-        <Tabs id="dashboard-sections" value={tab} onValueChange={setTab} className="scroll-mt-5 gap-4">
-          <TabsList className="w-full justify-start overflow-x-auto overflow-y-hidden sm:w-fit">
+        <Tabs id="dashboard-sections" value={tab} onValueChange={setTab} className="min-w-0 scroll-mt-5 gap-4">
+          <TabsList className="w-full justify-start overflow-x-auto overflow-y-hidden [scrollbar-width:none] sm:w-fit">
             <TabsTrigger value="today">Today&apos;s habits</TabsTrigger>
             <TabsTrigger value="routines">Habits &amp; routines</TabsTrigger>
             <TabsTrigger value="goals">Goals</TabsTrigger>
