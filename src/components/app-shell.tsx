@@ -153,7 +153,7 @@ export function AppShell({
           ))}
         </nav>
 
-        <main className="mx-auto grid max-w-7xl gap-5 p-4 pb-20 md:p-8 md:pb-20">
+        <main className="mx-auto grid min-w-0 max-w-7xl grid-cols-1 gap-5 p-4 pb-20 md:p-8 md:pb-20">
           <header className="app-page-header flex flex-wrap items-end gap-3">
             <div className="flex-1">
               <p className="app-eyebrow">Casanite / Personal system</p>

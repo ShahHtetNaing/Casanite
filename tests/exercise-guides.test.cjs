@@ -11,6 +11,8 @@ require.extensions[".ts"] = (module, filename) => {
 const { videoEmbedUrl, isExerciseSourceUrl, guideSourceUrl, videoWatchUrl } = require("../src/lib/exercise-video.ts");
 const { parseExerciseSource, importExerciseSource } = require("../src/lib/exercise-import.ts");
 const { workoutGuideFor, STARTER_PLAN } = require("../src/lib/workout-plan.ts");
+const { refreshBuiltInGuide, exerciseVideoPublisher } = require("../src/lib/exercise-guide.ts");
+const { MS_CATALOG } = require("../src/lib/exercise-catalog.ts");
 const videos = require("../src/lib/exercise-videos.json");
 const source = "https://www.muscleandstrength.com/exercises/cable-face-pull";
 const youtube = "https://www.youtube-nocookie.com/embed/7ZvpXA_mFpQ?rel=0";
@@ -37,6 +39,37 @@ test("source URLs allow old and modern M&S pages but never arbitrary fetch targe
 test("all verified source/video records use approved providers", () => {
   assert.ok(Object.keys(videos).length >= 26);
   for (const record of Object.values(videos)) { assert.ok(isExerciseSourceUrl(record.source_url)); assert.ok(videoEmbedUrl(record.video_url)); }
+});
+test("retired built-in videos refresh only for their exact movement and official source", () => {
+  const replaced = Object.entries(videos).filter(([, record]) => record.replaces_video_url);
+  assert.equal(replaced.length, 10);
+  for (const [slug, record] of replaced) {
+    const title = MS_CATALOG.find(([, value]) => value === slug)[0];
+    const original = Object.freeze({ video_url: record.replaces_video_url, source_url: record.source_url, cues: ["Keep my saved instruction"], tip: "Keep my tip" });
+    const refreshed = refreshBuiltInGuide(title, original, record.source_url);
+    assert.deepEqual(refreshed, { ...original, video_url: record.video_url });
+    assert.equal(original.video_url, record.replaces_video_url);
+    assert.equal(refreshBuiltInGuide(`Custom ${title}`, original, record.source_url), original);
+    assert.equal(refreshBuiltInGuide(title, original, source), original);
+    assert.equal(refreshBuiltInGuide(title, { ...original, source_url: source }, record.source_url).video_url, record.replaces_video_url);
+    const manual = { ...original, video_url: youtube };
+    assert.equal(refreshBuiltInGuide(title, manual, record.source_url), manual);
+    assert.ok(exerciseVideoPublisher(title, record.video_url));
+    assert.equal(exerciseVideoPublisher(title, record.replaces_video_url), null);
+    assert.equal(exerciseVideoPublisher(title, youtube), null);
+    assert.equal(refreshBuiltInGuide(title, refreshed, record.source_url), refreshed);
+  }
+});
+test("missing source proof, unrelated Vimeo videos and custom instructions are preserved", () => {
+  const record = videos["high-inverted-row"];
+  const original = { video_url: record.replaces_video_url, cues: ["Custom instructions"] };
+  assert.equal(refreshBuiltInGuide("Inverted Row", original, null), original);
+  const other = { ...original, video_url: "https://player.vimeo.com/video/123456789" };
+  assert.equal(refreshBuiltInGuide("Inverted Row", other, record.source_url), other);
+  assert.equal(refreshBuiltInGuide("Inverted Row", null, record.source_url), null);
+  const refreshed = refreshBuiltInGuide("Inverted Row", original, record.source_url.replace(/\.html$/, ""));
+  assert.equal(refreshed.video_url, record.video_url);
+  assert.equal(exerciseVideoPublisher("Custom movement", record.video_url), null);
 });
 test("every suggested movement has a playable URL and form instructions", () => {
   for (const group of STARTER_PLAN) for (const item of group.items) {
