@@ -1,27 +1,28 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Check, Pencil, Plus, Syringe, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+import { insulinUnits, medicationTakenAt } from "@/lib/medication-log";
 import { MEAL_SLOTS, type InsulinLog, type MealSlot, type NutritionSettings } from "@/lib/types";
-import { MEAL_LABEL, atTime, currentMeal, formatTime, nowTime, selectClass, timeOf, toNum } from "./shared";
+import { MEAL_LABEL, currentMeal, formatTime, nowTime, selectClass, timeOf } from "./shared";
 
-type Props = { day: string; today: string; initialLogs: InsulinLog[]; settings: NutritionSettings };
+type Props = { day: string; today: string; initialLogs: InsulinLog[]; settings: NutritionSettings; loadError?: boolean };
 
 function validUnits(s: string) {
-  const n = toNum(s);
-  if (n === null || Number.isNaN(n) || n <= 0 || n > 100) {
-    toast.error("Units must be between 0 and 100");
+  const n = insulinUnits(s);
+  if (n === null) {
+    toast.error("Enter units greater than 0 and at most 100, with up to one decimal place.");
     return null;
   }
   return n;
 }
 
-export function InsulinCard({ day, today, initialLogs, settings }: Props) {
+export function InsulinCard({ day, today, initialLogs, settings, loadError }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const [logs, setLogs] = useState(initialLogs);
   const defaultTime = day === today ? nowTime() : "12:00";
@@ -36,48 +37,85 @@ export function InsulinCard({ day, today, initialLogs, settings }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
   const [editUnits, setEditUnits] = useState("");
   const [editTime, setEditTime] = useState("");
+  const [busy, setBusy] = useState(false);
+  const saving = useRef(false);
 
   const lantus = logs.find((l) => l.kind === "lantus");
   const prandial = logs.filter((l) => l.kind === "prandial").sort((a, b) => a.taken_at.localeCompare(b.taken_at));
 
   async function add(kind: InsulinLog["kind"], unitsText: string, time: string, mealSlot: MealSlot | null) {
+    if (saving.current) return;
     const units = validUnits(unitsText);
     if (units === null) return;
-    const { data, error } = await supabase
-      .from("insulin_logs")
-      .insert({ day, kind, units, meal: mealSlot, taken_at: atTime(day, time) })
-      .select("*")
-      .single();
-    if (error) return toast.error(error.code === "23505" ? "Lantus is already logged for this day" : error.message);
-    setLogs((prev) => [...prev, data as InsulinLog]);
+    const taken_at = medicationTakenAt(day, time);
+    if (!taken_at) return toast.error("Enter a valid time for the dose you took.");
+    saving.current = true;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase
+        .from("insulin_logs")
+        .insert({ day, kind, units, meal: mealSlot, taken_at })
+        .select("*")
+        .single();
+      if (error) return toast.error(error.code === "23505" ? "Lantus is already logged for this day" : error.message);
+      setLogs((prev) => [...prev, data as InsulinLog]);
+      toast.success("Insulin dose recorded");
+    } catch {
+      toast.error("Could not save. Check your connection and try again.");
+    } finally {
+      saving.current = false;
+      setBusy(false);
+    }
   }
 
   async function saveEdit(log: InsulinLog) {
+    if (saving.current) return;
     const units = validUnits(editUnits);
     if (units === null) return;
-    const { data, error } = await supabase
-      .from("insulin_logs")
-      .update({ units, taken_at: atTime(day, editTime) })
-      .eq("id", log.id)
-      .select("*")
-      .single();
-    if (error) return toast.error(error.message);
-    setLogs((prev) => prev.map((l) => (l.id === log.id ? (data as InsulinLog) : l)));
-    setEditing(null);
+    const taken_at = medicationTakenAt(day, editTime);
+    if (!taken_at) return toast.error("Enter a valid time for the dose you took.");
+    saving.current = true;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase
+        .from("insulin_logs")
+        .update({ units, taken_at })
+        .eq("id", log.id)
+        .select("*")
+        .single();
+      if (error) return toast.error(error.message);
+      setLogs((prev) => prev.map((l) => (l.id === log.id ? (data as InsulinLog) : l)));
+      setEditing(null);
+    } catch {
+      toast.error("Could not save. Check your connection and try again.");
+    } finally {
+      saving.current = false;
+      setBusy(false);
+    }
   }
 
   async function remove(log: InsulinLog) {
-    if (!confirm(`Delete this ${log.units} u dose?`)) return;
-    const { error } = await supabase.from("insulin_logs").delete().eq("id", log.id);
-    if (error) return toast.error(error.message);
-    setLogs((prev) => prev.filter((l) => l.id !== log.id));
+    if (saving.current || !confirm(`Delete this ${log.units} u dose?`)) return;
+    saving.current = true;
+    setBusy(true);
+    try {
+      const { error } = await supabase.from("insulin_logs").delete().eq("id", log.id);
+      if (error) return toast.error(error.message);
+      setLogs((prev) => prev.filter((l) => l.id !== log.id));
+      if (editing === log.id) setEditing(null);
+    } catch {
+      toast.error("Could not delete. Check your connection and try again.");
+    } finally {
+      saving.current = false;
+      setBusy(false);
+    }
   }
 
   function row(log: InsulinLog, label: string) {
     if (editing === log.id) {
       return (
-        <div key={log.id} className="flex items-center gap-2">
-          <Input type="number" step="0.5" value={editUnits} onChange={(e) => setEditUnits(e.target.value)} aria-label="Units" className="w-20" />
+        <div key={log.id} className="flex flex-wrap items-center gap-2">
+          <Input type="number" step="0.1" value={editUnits} onChange={(e) => setEditUnits(e.target.value)} aria-label="Units" className="w-20" />
           <Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} aria-label="Time" className="w-28" />
           <Button size="icon-sm" aria-label="Save dose" onClick={() => saveEdit(log)}>
             <Check />
@@ -117,9 +155,11 @@ export function InsulinCard({ day, today, initialLogs, settings }: Props) {
     <Card>
       <CardHeader className="flex flex-row items-center gap-2">
         <Syringe className="size-4 text-primary" />
-        <CardTitle className="flex-1">Insulin</CardTitle>
+        <CardTitle className="flex-1">Insulin doses taken</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
+        {loadError ? <p role="alert" className="text-sm text-destructive">Insulin history could not be loaded. Check your database setup and reload this page before logging.</p> : <fieldset disabled={busy} className="grid min-w-0 gap-4">
+        <p className="text-xs text-muted-foreground">Enter the dose you actually took, not a planned dose. Values can be edited; nothing is marked taken automatically.</p>
         <div className="grid gap-2">
           <p className="text-sm font-medium">
             Lantus <span className="font-normal text-muted-foreground">· long-acting, once a day</span>
@@ -128,7 +168,7 @@ export function InsulinCard({ day, today, initialLogs, settings }: Props) {
             row(lantus, "Lantus")
           ) : (
             <div className="flex flex-wrap items-center gap-2">
-              <Input type="number" step="0.5" value={lantusUnits} onChange={(e) => setLantusTyped(e.target.value)} aria-label="Lantus units" className="w-20" />
+              <Input type="number" step="0.1" value={lantusUnits} onChange={(e) => setLantusTyped(e.target.value)} aria-label="Lantus units" className="w-20" />
               <span className="text-sm text-muted-foreground">u</span>
               <Input type="time" value={lantusTime} onChange={(e) => setLantusTime(e.target.value)} aria-label="Lantus time" className="w-28" />
               <Button size="sm" onClick={() => add("lantus", lantusUnits, lantusTime, null)}>
@@ -140,11 +180,11 @@ export function InsulinCard({ day, today, initialLogs, settings }: Props) {
 
         <div className="grid gap-2">
           <p className="text-sm font-medium">
-            Meal-time insulin <span className="font-normal text-muted-foreground">· {prandial.length} of 2–3 doses</span>
+            Meal-time insulin <span className="font-normal text-muted-foreground">· {prandial.length} dose{prandial.length === 1 ? "" : "s"} logged</span>
           </p>
           {prandial.map((l) => row(l, l.meal ? MEAL_LABEL[l.meal] : "Meal"))}
           <div className="flex flex-wrap items-center gap-2">
-            <Input type="number" step="0.5" value={mealUnits} onChange={(e) => setMealTyped(e.target.value)} aria-label="Meal-time units" className="w-20" />
+            <Input type="number" step="0.1" value={mealUnits} onChange={(e) => setMealTyped(e.target.value)} aria-label="Meal-time units" className="w-20" />
             <span className="text-sm text-muted-foreground">u</span>
             <select className={`${selectClass} w-28`} value={meal} onChange={(e) => setMeal(e.target.value as MealSlot)} aria-label="Meal">
               {MEAL_SLOTS.map((m) => (
@@ -159,7 +199,8 @@ export function InsulinCard({ day, today, initialLogs, settings }: Props) {
             </Button>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">For tracking only. Follow your doctor&apos;s dosing plan.</p>
+        </fieldset>}
+        <p className="text-xs text-muted-foreground">For tracking only. Defaults are editable under Targets, not dosing advice. Follow your doctor&apos;s dosing plan.</p>
       </CardContent>
     </Card>
   );

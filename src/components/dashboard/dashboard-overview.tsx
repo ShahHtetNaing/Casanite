@@ -39,6 +39,7 @@ export function DashboardOverview({ data, done, total, onSelect }: {
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">A little structure for your health, learning and everyday life. Choose the next useful thing—not everything at once.</p>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link href="/tasks" className={buttonVariants({ size: "sm" })}><ListTodo /> Open daily tasks</Link>
+            <Link href="/meals#medications" className={buttonVariants({ size: "sm", variant: "outline" })}>Insulin & medicines</Link>
             <Button type="button" size="sm" variant="outline" onClick={() => onSelect("health")}><HeartPulse /> Review / log health</Button>
           </div>
         </div>

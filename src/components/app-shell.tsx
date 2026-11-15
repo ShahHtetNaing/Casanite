@@ -31,7 +31,7 @@ const NAV = [
   { href: "/tasks", label: "Daily Tasks", icon: ListTodo },
   { href: "/shopping", label: "Things to Buy", icon: ShoppingCart },
   { href: "/mind", label: "Mind & Words", icon: Brain },
-  { href: "/meals", label: "Meals", icon: UtensilsCrossed },
+  { href: "/meals", label: "Meals & Meds", icon: UtensilsCrossed },
   { href: "/workout", label: "Workout", icon: Dumbbell },
   { href: "/recipes", label: "Recipes", icon: ChefHat },
   { href: "/journal", label: "Journal", icon: BookOpen },

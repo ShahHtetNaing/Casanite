@@ -12,8 +12,9 @@ import { Progress } from "@/components/ui/progress";
 import { createClient } from "@/lib/supabase/client";
 import { checkMeal, MILK_SAFE_FRUITS, type DietWarning } from "@/lib/milk-fruit";
 import { cn } from "@/lib/utils";
-import { MEAL_SLOTS, type InsulinLog, type MealLog, type MealSlot, type NutritionSettings, type Supplement, type SupplementLog } from "@/lib/types";
+import { MEAL_SLOTS, type InsulinLog, type MedicineLog, type MealLog, type MealSlot, type NutritionSettings, type Supplement, type SupplementLog } from "@/lib/types";
 import { InsulinCard } from "./insulin-card";
+import { MedicinesCard } from "./medicines-card";
 import { SupplementsCard } from "./supplements-card";
 import { ScanMeal } from "./scan-meal";
 import { MEAL_LABEL, currentMeal, selectClass, toNum, type MealFields } from "./shared";
@@ -21,6 +22,9 @@ import { MEAL_LABEL, currentMeal, selectClass, toNum, type MealFields } from "./
 type Props = {
   day: string;
   today: string;
+  initialMedicines: MedicineLog[];
+  medicinesLoadError: boolean;
+  insulinLoadError: boolean;
   initialMeals: MealLog[];
   recentMeals: MealFields[];
   initialInsulin: InsulinLog[];
@@ -119,7 +123,7 @@ export function Meals(props: Props) {
   const goTo = (d: string) => router.push(d === today ? "/meals" : `/meals?day=${d}`);
 
   return (
-    <PageShell title="Meals" subtitle="Log what you actually eat, plus insulin and supplements">
+    <PageShell title="Meals & Meds" subtitle="Record insulin doses, medicines taken, food and supplements">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="icon-sm" aria-label="Previous day" onClick={() => goTo(shiftDay(day, -1))}>
           <ChevronLeft />
@@ -134,6 +138,14 @@ export function Meals(props: Props) {
           </Button>
         )}
       </div>
+
+      <section id="medications" aria-labelledby="medications-heading" className="grid scroll-mt-24 gap-3">
+        <h2 id="medications-heading" className="font-display text-2xl tracking-wide">Insulin & medicines · {formatDay(day)}</h2>
+        <div className="grid gap-5 xl:grid-cols-2">
+          <InsulinCard day={day} today={today} initialLogs={props.initialInsulin} settings={settings} loadError={props.insulinLoadError} />
+          <MedicinesCard day={day} today={today} initialLogs={props.initialMedicines} loadError={props.medicinesLoadError} />
+        </div>
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -249,7 +261,6 @@ export function Meals(props: Props) {
       </Card>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <InsulinCard day={day} today={today} initialLogs={props.initialInsulin} settings={settings} />
         <SupplementsCard day={day} initialSupplements={props.initialSupplements} initialLogs={props.initialSupplementLogs} />
       </div>
     </PageShell>
