@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { createClient } from "@/lib/supabase/client";
 import { WEEKDAY_SHORT } from "@/lib/date";
 import { EXERCISE_NAMES, workoutGuideFor } from "@/lib/workout-plan";
+import { refreshBuiltInGuide } from "@/lib/exercise-guide";
 import { GoalPlan } from "./goal-plan";
 import { videoEmbedUrl } from "@/lib/exercise-video";
 import type { ExerciseGuide, RoutineGroup, RoutineItem, WorkoutSession, WorkoutSet } from "@/lib/types";
@@ -185,7 +186,7 @@ function ExerciseEditor({ item, groups, onClose, onSave }: {
   const [rest, setRest] = useState(item?.workout_rest_seconds ?? 90);
   const [url, setUrl] = useState(item?.guide_url ?? "");
   const [busy, setBusy] = useState(false);
-  const [guide, setGuide] = useState<ExerciseGuide | null>(() => item?.guide?.video_url ? item.guide : workoutGuideFor(item?.title ?? "").guide ?? item?.guide ?? null);
+  const [guide, setGuide] = useState<ExerciseGuide | null>(() => item?.guide?.video_url ? refreshBuiltInGuide(item.title, item.guide, item.guide_url) : workoutGuideFor(item?.title ?? "").guide ?? item?.guide ?? null);
   const [videoUrl, setVideoUrl] = useState(guide?.video_url ?? "");
   const [steps, setSteps] = useState(guide?.cues?.join("\n") ?? "");
   const [manualGuide, setManualGuide] = useState(false);
@@ -197,7 +198,7 @@ function ExerciseEditor({ item, groups, onClose, onSave }: {
     if (manualGuide) { setImporting(false); return; }
     const local = workoutGuideFor(title);
     const unchanged = item && title.trim().toLowerCase() === item.title.trim().toLowerCase();
-    const saved = unchanged && item.guide?.video_url ? item.guide : null;
+    const saved = unchanged && item.guide?.video_url ? refreshBuiltInGuide(title, item.guide, item.guide_url) : null;
     const ready = saved ?? (url === (local.guide_url ?? "") ? local.guide : null);
     if (videoEmbedUrl(ready?.video_url)) {
       setGuide(ready); setVideoUrl(ready?.video_url ?? ""); setSteps(ready?.cues?.join("\n") ?? "");
@@ -229,7 +230,7 @@ function ExerciseEditor({ item, groups, onClose, onSave }: {
     if (value.trim().toLowerCase() === title.trim().toLowerCase()) { setTitle(value); return; }
     const unchanged = item && value.trim().toLowerCase() === item.title.trim().toLowerCase();
     if (item && !unchanged && title.trim().toLowerCase() === item.title.trim().toLowerCase()) setSets([{ ...DEFAULT_SET }]);
-    const next = unchanged && item.guide?.video_url ? { guide_url: item.guide_url, guide: item.guide } : workoutGuideFor(value);
+    const next = unchanged && item.guide?.video_url ? { guide_url: item.guide_url, guide: refreshBuiltInGuide(value, item.guide, item.guide_url) } : workoutGuideFor(value);
     setTitle(value);
     setUrl(next.guide_url ?? ""); setGuide(next.guide); setVideoUrl(next.guide?.video_url ?? "");
     setSteps(next.guide?.cues?.join("\n") ?? ""); setManualGuide(false);
@@ -282,7 +283,7 @@ function ExerciseEditor({ item, groups, onClose, onSave }: {
       </label>
       <p className="text-xs text-muted-foreground">Set defaults for future workouts; your dated logs will not change.</p>
       <SetFields sets={sets} onChange={setSets} />
-      {title.trim() && <TutorialButton key={title} title={title} url={null} guideUrl={url || null} autoImport={false}
+      {title.trim() && <TutorialButton key={title} title={title} url={null} guideUrl={url || null} autoImport={false} refreshBuiltIns={false}
         guide={{ ...guide, video_url: videoUrl, cues: steps.split("\n").filter(Boolean) }} />}
       <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={onClose}>Cancel</Button><Button type="submit" disabled={busy || importing}><Check /> Save exercise</Button></div>
     </form>

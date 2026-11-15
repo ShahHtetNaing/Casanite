@@ -1,7 +1,9 @@
 import originalCatalog from "./ms-exercises.json";
 import videoData from "./exercise-videos.json";
 
-export const EXERCISE_VIDEOS = videoData as Record<string, { source_url: string; video_url: string }>;
+export const EXERCISE_VIDEOS = videoData as Record<string, {
+  source_url: string; video_url: string; publisher?: string; replaces_video_url?: string;
+}>;
 const verifiedNames: Record<string, string> = {
   "incline-push-ups": "Incline Push Ups",
   "dumbbell-lateral-raise": "Dumbbell Lateral Raise",

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { ExerciseGuide } from "@/lib/types";
 import { workoutGuideFor } from "@/lib/workout-plan";
 import { guideSourceUrl, isExerciseSourceUrl, videoEmbedUrl, videoWatchUrl } from "@/lib/exercise-video";
+import { exerciseVideoPublisher, refreshBuiltInGuide } from "@/lib/exercise-guide";
 
 const msSearch = (title: string) =>
   `https://www.google.com/search?q=${encodeURIComponent(`site:muscleandstrength.com/exercises ${title}`)}`;
@@ -19,6 +20,7 @@ export function TutorialButton({
   guide: storedGuide = null,
   itemId,
   autoImport = true,
+  refreshBuiltIns = true,
 }: {
   url: string | null;
   title: string;
@@ -26,16 +28,19 @@ export function TutorialButton({
   guide?: ExerciseGuide | null;
   itemId?: string;
   autoImport?: boolean;
+  refreshBuiltIns?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [imported, setImported] = useState<ExerciseGuide | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const matched = useMemo(() => workoutGuideFor(title), [title]);
-  const guide = imported ?? (storedGuide && "video_url" in storedGuide ? storedGuide : matched.guide ?? storedGuide);
-  const sourceUrl = matched.guide_url ?? guideUrl ?? guide?.source_url ?? null;
+  const saved = refreshBuiltIns ? refreshBuiltInGuide(title, storedGuide, guideUrl) : storedGuide;
+  const guide = imported ?? (saved && "video_url" in saved ? saved : url ? { ...matched.guide, ...saved, video_url: url } : matched.guide ?? saved);
+  const sourceUrl = guideUrl ?? guide?.source_url ?? matched.guide_url ?? null;
   const sourceLink = guideSourceUrl(sourceUrl);
   const video = videoEmbedUrl(guide?.video_url ?? url);
+  const publisher = exerciseVideoPublisher(title, video);
 
   useEffect(() => {
     setImported(null);
@@ -82,6 +87,7 @@ export function TutorialButton({
                 allow="encrypted-media; fullscreen; picture-in-picture" allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin" />
             </div>}
+            {publisher && <p className="text-xs text-muted-foreground">Video demonstration: {publisher}. Written form guide is linked below.</p>}
             {loading && <p role="status" className="text-sm text-muted-foreground">Importing the exercise video and instructions…</p>}
             {!video && !loading && <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
               {error || "No verified in-app video is available yet. Use the official guide below, or add a verified video in Edit exercise."}
